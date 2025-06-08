@@ -1,28 +1,25 @@
 <script setup lang="ts">
+import type { VideoInfo, Subtitle, VideoSubtitle } from '~/types';
+
 const videoRef = useTemplateRef<HTMLVideoElement>('video');
 let media: Ref<null | GuoPlayer> = ref(null);
 onMounted(() => {
   media.value = new GuoPlayer(
     videoRef.value as HTMLVideoElement,
-    '/video/output.mpd',
-    'dash',
+    currentVideo.value.url,
+    currentVideo.value.type,
+    autoplay,
   );
   // 初始调整
   adjustFontSize();
-  const observer = new ResizeObserver((entries) => {
+  const observer = new ResizeObserver(() => {
     adjustFontSize();
   });
   observer.observe(playerRef.value as HTMLDivElement);
 });
-const { data: lyricData, status } = await useAsyncData('lyric', () =>
-  $fetch('/api/lyric'),
-);
-
-const lyric = lyricData.value?.body;
 
 interface Props {
-  videoList?: Array<any>;
-  // sources: Array<any>;
+  videoList?: VideoInfo[];
   conterols?: boolean;
   mute?: boolean;
   autoplay?: boolean;
@@ -42,6 +39,9 @@ const {
   volume: PropVolume = 1,
   subtitlesButton = true,
 } = defineProps<Props>();
+
+const index = ref(0);
+const currentVideo = ref(videoList[index.value]) as Ref<VideoInfo>;
 
 let clickTimer: NodeJS.Timeout | null = null;
 
@@ -106,12 +106,12 @@ function togglePictureInPicture() {
   }
 }
 
-interface IQuality {
+interface Quality {
   label: string;
   representation: dashjs.Representation;
 }
 
-function toggleQuality(item: IQuality) {
+function toggleQuality(item: Quality) {
   if (media.value) {
     media.value.toggleQuality(item);
   }
@@ -184,19 +184,21 @@ const currentQuality = computed(() => {
   return media.value?.state.currentQuality;
 });
 
-const currentLyric = computed(() => {
-  if (media.value) {
-    for (let item of lyric) {
-      if (
-        item.from <= media.value?.state.currentTime / 1000 &&
-        item.to >= media.value?.state.currentTime / 1000
-      ) {
-        return item.content;
-      }
-    }
-  }
-  return '';
-});
+let subtitleList: Subtitle[] = [];
+
+// const currentLyric = computed(() => {
+//   if (media.value && lyric) {
+//     for (let item of lyric) {
+//       if (
+//         item.from <= media.value?.state.currentTime / 1000 &&
+//         item.to >= media.value?.state.currentTime / 1000
+//       ) {
+//         return item.content;
+//       }
+//     }
+//   }
+//   return '';
+// });
 const text = useTemplateRef<HTMLDivElement>('subtitlesRef');
 
 function adjustFontSize() {
@@ -211,22 +213,98 @@ function adjustFontSize() {
   text.value.style.fontSize = newSize + 'px';
 }
 
-function toggleSubtitles() {
-  isShowSubtitles.value = !isShowSubtitles.value;
+async function toggleSubtitlesVisible(isShow: boolean) {
+  isShowSubtitles.value = isShow;
+  if (isShowSubtitles.value) {
+    if (currentVideo.value.subtitles[0]) {
+      await getLyric(
+        currentVideo.value.subtitles[0].lang,
+        currentVideo.value.name,
+      );
+      primarySubtitle.value = subtitleList[0] ?? null;
+    }
+  }
 }
+
+async function toggleSubtitles(item: VideoSubtitle, type: string) {
+  await getLyric(item.lang, currentVideo.value.name);
+  let lyricObj = subtitleList.find((lyric) => lyric.lang == item.lang) ?? null;
+  if (type == 'primary') {
+    primarySubtitle.value = lyricObj;
+  } else {
+    secondarySubtitle.value = lyricObj;
+  }
+}
+
+const primarySubtitle = ref<Subtitle | null>(null);
+const secondarySubtitle = ref<Subtitle | null>(null);
+
+async function getLyric(lang: string, name: string) {
+  if (subtitleList.find((item) => item.lang == lang)) return;
+  const { data: subtitleData, status } = await useFetch(`/api/lyric`, {
+    query: {
+      lang: lang,
+      name: name,
+    },
+  });
+  if (subtitleData.value) {
+    subtitleList.push(subtitleData.value);
+  }
+}
+
+// watchEffect(async () => {
+//   if (controller) {
+//     controller.abort();
+//   }
+//   controller = new AbortController();
+//   const { data: lyricData, status } = await useFetch(`/api/lyric`, {
+//       signal: controller!.signal,
+//       query: {
+//         lang:currentVideo.value.subtitle[0].lang,
+//         name: currentVideo.value.name
+//       }
+//   }),
+//   lyric = lyricData.value?.body;
+// });
 
 const isShowSubtitles = ref(false);
 
-const subtitles = [
-  {
-    label: '中文（中国）',
-  },
-  {
-    label: '韩语',
-  },
-];
-
 const doubleSubtitle = ref(false);
+
+function back() {
+  if (index.value <= 0) {
+    index.value = videoList.length - 1;
+  } else {
+    index.value--;
+  }
+  changeVideo(index);
+}
+
+function forward() {
+  if (index.value >= videoList.length - 1) {
+    index.value = 0;
+  } else {
+    index.value++;
+  }
+  changeVideo(index);
+}
+
+function changeVideo(index: Ref<number>) {
+  subtitleList = [];
+  primarySubtitle.value = null;
+  secondarySubtitle.value = null;
+  currentVideo.value = videoList[index.value] as VideoInfo;
+  media.value?.src(currentVideo.value.url, currentVideo.value.type);
+  if (media.value) {
+    if (autoplay) {
+      media.value.state.paused = false;
+    } else {
+      media.value.state.paused = true;
+    }
+  }
+
+  toggleSubtitlesVisible(isShowSubtitles.value);
+}
 </script>
 
 <template>
@@ -333,11 +411,36 @@ const doubleSubtitle = ref(false);
         <div class="guo-subtitles-text">
           <div class="guo-subtitles-text-content">
             <div
+              v-if="
+                useCurrentLyric(
+                  primarySubtitle?.body ?? [],
+                  media?.state.currentTime ?? 0,
+                )
+              "
               class="guo-subtitles-text-content-text my-[0.25em] rounded-sm bg-gray-900/60 px-[0.5em] py-[0.5em]"
-              v-for="(item, index) in currentLyric"
-              :key="index"
             >
-              {{ item }}
+              {{
+                useCurrentLyric(
+                  primarySubtitle?.body ?? [],
+                  media?.state.currentTime ?? 0,
+                )
+              }}
+            </div>
+            <div
+              v-if="
+                useCurrentLyric(
+                  secondarySubtitle?.body ?? [],
+                  media?.state.currentTime ?? 0,
+                )
+              "
+              class="guo-subtitles-text-content-text my-[0.25em] rounded-sm bg-gray-900/60 px-[0.5em] py-[0.5em]"
+            >
+              {{
+                useCurrentLyric(
+                  secondarySubtitle?.body ?? [],
+                  media?.state.currentTime ?? 0,
+                )
+              }}
             </div>
           </div>
         </div>
@@ -345,7 +448,11 @@ const doubleSubtitle = ref(false);
       <div
         class="guo-conrols delay-3000 flex h-0 w-full items-center gap-2 overflow-hidden bg-gray-900/50 px-2 text-gray-50 opacity-0 transition-all duration-300 ease-in-out group-hover/control:h-8 group-hover/control:overflow-visible group-hover/control:opacity-100"
       >
-        <div v-if="videoList.length > 0" class="guo-skip-back">
+        <div
+          v-if="videoList.length > 0"
+          class="guo-skip-back"
+          @pointerdown="back()"
+        >
           <Icon size="20" name="ri:skip-back-fill" style="color: #f3f4f6" />
         </div>
         <div class="guo-play" @pointerdown="playOrPause">
@@ -357,7 +464,11 @@ const doubleSubtitle = ref(false);
           />
           <Icon size="20" v-else name="ri:pause-fill" style="color: #f3f4f6" />
         </div>
-        <div v-if="videoList.length > 0" class="guo-skip-forward">
+        <div
+          v-if="videoList.length > 0"
+          class="guo-skip-forward"
+          @pointerdown="forward()"
+        >
           <Icon size="20" name="ri:skip-forward-fill" style="color: #f3f4f6" />
         </div>
         <div class="guo-current-time">{{ currentTime }}</div>
@@ -382,7 +493,15 @@ const doubleSubtitle = ref(false);
         <div class="guo-time">{{ duration }}</div>
         <div class="guo-volume group/volume relative flex overflow-hidden">
           <div class="group-hover/volume:pr-2">
-            <Icon size="20" :name="volumnIconDict[1]" style="color: #f3f4f6" />
+            <Icon
+              size="20"
+              :name="
+                volumnIconDict[
+                  initVolume === 0 ? 0 : initVolume > 0.5 ? 1 : 0.5
+                ]
+              "
+              style="color: #f3f4f6"
+            />
           </div>
           <div
             class="w-0 overflow-hidden leading-[10px] shadow transition-all duration-300 ease-in-out group-hover/volume:w-24"
@@ -401,18 +520,22 @@ const doubleSubtitle = ref(false);
         <!-- <div class="guo-subtitles">
           <div v-for="item in qualityList" :key="item.label">{{item.label}}</div>
         </div> -->
-        <div class="guo-quality group/quality relative h-8 leading-8">
+        <div
+          v-if="currentQuality"
+          class="guo-quality group/quality relative h-8 select-none leading-8"
+        >
           <div class="guo-quality-current">
-            {{ currentQuality?.label }}
+            {{ currentQuality.label }}
           </div>
           <div
-            class="guo-quality-all absolute bottom-full left-[50%] w-[200%] -translate-x-[50%] rounded-t-sm bg-gray-900/50 leading-none opacity-0 transition-all duration-300 group-hover/quality:opacity-100"
+            class="guo-quality-all absolute bottom-full left-[50%] w-[200%] -translate-x-[50%] rounded-t-sm bg-gray-900/50 p-1 leading-none opacity-0 transition-all duration-300 group-hover/quality:opacity-100"
           >
             <div
-              @pointerdown="toggleQuality(item)"
-              class="my-1 w-full py-1 text-center"
+              @pointerdown="toggleQuality(item as Quality)"
+              class="box-bo my-1 w-full cursor-pointer py-1 text-center hover:bg-gray-50/10"
               v-for="item in qualityList"
               :key="item.label"
+              :class="{ 'text-violet-500': currentQuality.label == item.label }"
             >
               {{ item.label }}
             </div>
@@ -420,11 +543,11 @@ const doubleSubtitle = ref(false);
         </div>
         <div
           v-if="subtitlesButton"
-          class="guo-subtitles group/subtitles relative h-8 leading-8"
+          class="guo-subtitles group/subtitles relative h-8 select-none leading-8"
         >
           <div
             class="guo-subtitles-current relative"
-            @pointerdown="toggleSubtitles"
+            @pointerdown="toggleSubtitlesVisible(!isShowSubtitles)"
           >
             <Icon
               v-if="isShowSubtitles"
@@ -441,11 +564,11 @@ const doubleSubtitle = ref(false);
             />
           </div>
           <div
-            class="guo-subtitles-all absolute -right-2 bottom-full w-fit rounded-t-sm bg-gray-900/50 p-1 text-left text-[0.9em] leading-none opacity-0 group-hover/subtitles:opacity-100"
+            class="guo-subtitles-all absolute -right-4 bottom-full hidden w-fit rounded-t-sm bg-gray-900/50 p-1 px-4 text-left text-[0.9em] leading-none group-hover/subtitles:block"
             absolute
             bottom-full
           >
-            <div class="mt-2 w-24">
+            <div class="mt-2 w-full">
               <span>双语字幕</span>
               <label
                 class="relative ml-2 inline-flex cursor-pointer items-center"
@@ -459,7 +582,7 @@ const doubleSubtitle = ref(false);
                 />
                 <label
                   for="switch"
-                  class="before:left-0.25 before:top-0.25 inline-flex h-3 w-6 items-center justify-between rounded-full bg-gray-200 before:absolute before:h-2.5 before:w-2.5 before:rounded-full before:border before:border-gray-300 before:bg-white before:transition-all peer-checked:bg-blue-600 peer-checked:before:translate-x-3 peer-checked:before:border-transparent peer-checked:before:bg-white peer-focus:before:outline-none"
+                  class="before:top-0.25 before:left-0.25 inline-flex h-3 w-6 items-center justify-between rounded-full bg-gray-200 before:absolute before:h-2.5 before:w-2.5 before:rounded-full before:border before:border-gray-300 before:bg-white before:transition-all peer-checked:bg-blue-600 peer-checked:before:translate-x-3 peer-checked:before:border-transparent peer-checked:before:bg-white peer-focus:before:outline-none"
                 ></label>
               </label>
             </div>
@@ -467,8 +590,11 @@ const doubleSubtitle = ref(false);
               class="h-auto w-24 text-left transition-all duration-500 ease-in-out"
               :class="{ 'w-48': doubleSubtitle }"
             >
-              <div class="flex w-48">
-                <div class="w-24">
+              <div
+                class="w-42 mx-3 flex justify-between"
+                :class="{ 'mx-3': doubleSubtitle }"
+              >
+                <div class="w-auto">
                   <div
                     class="my-1 py-1 text-[0.75em]"
                     :class="{
@@ -480,8 +606,12 @@ const doubleSubtitle = ref(false);
                   </div>
                   <div
                     class="my-1 w-full py-1"
-                    v-for="item in subtitles"
-                    :key="item.label"
+                    v-for="item in currentVideo.subtitles"
+                    :key="item.lang"
+                    :class="{
+                      'text-violet-500': item.lang === primarySubtitle?.lang,
+                    }"
+                    @pointerdown="toggleSubtitles(item, 'primary')"
                   >
                     {{ item.label }}
                   </div>
@@ -493,12 +623,17 @@ const doubleSubtitle = ref(false);
                   enter-from-class="opacity-0 translate-x-4"
                   leave-to-class="opacity-0 translate-x-4"
                 >
-                  <div v-show="doubleSubtitle" class="w-24">
+                  <div v-show="doubleSubtitle" class="w-auto">
                     <div class="my-1 py-1 text-[0.75em]">{{ '副字幕' }}</div>
                     <div
                       class="my-1 w-full py-1"
-                      v-for="item in subtitles"
-                      :key="item.label"
+                      v-for="item in currentVideo.subtitles"
+                      :key="item.lang"
+                      :class="{
+                        'text-violet-500':
+                          item.lang === secondarySubtitle?.lang,
+                      }"
+                      @pointerdown="toggleSubtitles(item, 'secondary')"
                     >
                       {{ item.label }}
                     </div>
@@ -532,12 +667,23 @@ const doubleSubtitle = ref(false);
             name="ri:fullscreen-line"
             style="color: #f3f4f6"
           />
-          <Icon
+          <!-- <Icon
             size="20"
             v-else
             name="ri:fullscreen-exit-line"
             style="color: #f3f4f6"
-          />
+          /> -->
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+          >
+            <path
+              fill="currentColor"
+              d="M18 7h4v2h-6V3h2zM8 9H2V7h4V3h2zm10 8v4h-2v-6h6v2zM8 15v6H6v-4H2v-2z"
+            />
+          </svg>
         </div>
       </div>
     </div>

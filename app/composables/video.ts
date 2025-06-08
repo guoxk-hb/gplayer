@@ -1,3 +1,11 @@
+
+import type { Level } from 'hls.js';
+import type Hls from 'hls.js';
+import type { Quality } from '~/types';
+
+
+type PlayerType = dashjs.MediaPlayerClass | null | Hls
+
 interface videoState {
   paused: boolean
   canplay: boolean
@@ -9,17 +17,16 @@ interface videoState {
   isFullscreen: boolean
   isPictureInPicture: boolean
   error: boolean
-  representation?: dashjs.Representation[]
-  currentRepresentation?: dashjs.Representation | null
-  qualityList: Array<IQuality>,
-  currentQuality: IQuality | null
-  player: dashjs.MediaPlayerClass | null
+  representation?: dashjs.Representation[] | Level[]
+  currentRepresentation?: dashjs.Representation | null | Level
+  qualityList: Array<Quality>,
+  currentQuality: Quality | null
+  player: PlayerType
+  type: string | null
+  src: string
+  autoPlay: boolean
 }
 
-interface IQuality {
-  label: string
-  representation: dashjs.Representation
-}
 
 enum QUALITY {
   '流畅' = 480,
@@ -45,109 +52,56 @@ export class GuoPlayer {
       qualityList: [],
       currentQuality: null,
       player: null,
+      type: null,
+      src: '',
+      autoPlay: false
     }
   )
-  subtitles: Array<any> = []
-  constructor(video: HTMLVideoElement, src: string, type: string) {
+  constructor(video: HTMLVideoElement, src: string, type: string, autoPlay: boolean = false) {
     this.video = video
-    if (type === 'hls') {
-      let Hls = useNuxtApp().$Hls
-      if (Hls.isSupported()) {
-        const hls = new Hls();
-        hls.loadSource(src)
-        hls.attachMedia(video);
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          // video.play();
-          // this.state.paused = false
-        });
-      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        video.src = src
-        video.addEventListener('loadedmetadata', () => {
-          // video.play()
-          // this.state.paused = false
-        })
-      }
+    this.state.src = src
+    this.state.type = type
+    this.state.autoPlay = autoPlay
+    this.init(video, src, type)
+  }
+  // get Muted(): boolean {
+  //   return this.video.defaultMuted;
+  // }
+  // get rate(): number {
+  //   return this.video.defaultPlaybackRate;
+  // }
+  // get readyState(): number {
+  //   //  0 没有信息，视频未准备好
+  //   //  1 视频元数据已准备
+  //   //  2 视频当前位置数据可用，但是下一帧数据没有
+  //   //  3 当前和至少下一帧数据可用
+  //   //  4 有足够的数据可以播放
+  //   return this.video.readyState;
+  // }
+  // get networkState(): number {
+  //   //  0 还没初始化
+  //   //  1 处于活跃状态，但还没使用网络
+  //   //  2 浏览器在下载数据
+  //   //  3 没有找到数据源
+  //   return this.video.networkState;
+  // }
+
+  private init(video: HTMLVideoElement, src: string, type: string) {
+    if (type === 'm3u8') {
+      this.hls(src)
     }
-    if (type === 'dash') {
-      let dash = useNuxtApp().$dash
-      const player = this.state.player = dash
-        .MediaPlayer()
-        .create()
-      player.initialize(
-        video,
-        src,
-        false // 自动播放
-      )
-      player.updateSettings({
-        streaming: {
-          abr: {
-            autoSwitchBitrate: {
-              video: false, // 自动切换视频清晰度
-              audio: false // 自动切换音频清晰度
-            }
-          },
-          buffer: {
-            flushBufferAtTrackSwitch: true,
-
-            // When enabled, after a track switch and in case buffer is being replaced, the video element is flushed (seek at current playback time) once a segment of the new track is appended in buffer in order to force video decoder to play new track.
-            // 当启用时，在轨道切换后以及缓冲区正在被替换的情况下，每当新轨道的一段被追加到缓冲区中时，视频元素会刷新（在当前播放时间处进行定位），以强制视频解码器播放新轨道。
-
-            // This can be required on some devices like GoogleCast devices to make track switching functional.
-            // 在某些设备上，如 GoogleCast 设备，可能需要这样做才能使轨道切换功能正常工作。
-
-            // Otherwise, track switching will be effective only once after previous buffered track is fully consumed.
-            // 否则，轨道切换只有在之前的缓冲轨道完全被消耗后才会生效一次。
-            fastSwitchEnabled: true,  // 开启快速切换 segment（重点！）
-          },
-        }
-      })
-      console.log(this.state.player!.getSettings())
-      player.on(dash.MediaPlayer.events.STREAM_INITIALIZED, (e) => {
-        this.state.representation = player!.getRepresentationsByType('video');
-        this.state.currentRepresentation = player!.getCurrentRepresentationForType('video');
-        for (let item of this.state.representation!) {
-          if (QUALITY[item.height]) {
-            let obj: IQuality = {
-              label: QUALITY[item.height] as string,
-              representation: item
-            }
-            this.state.qualityList.push(obj)
-            if (item.id === this.state.currentRepresentation?.id) {
-              this.state.currentQuality = obj
-            }
-          }
-        }
-        this.state.qualityList = this.state.qualityList.sort((a, b) => b.representation.height - a.representation.height)
-      })
-      // 监听画质切换完成事件，只监听一次
-      this.state.player.on(dash.MediaPlayer.events.QUALITY_CHANGE_RENDERED, () => {
-        console.log('清晰度切换完成')
-      })
-      this.state.player.on(dash.MediaPlayer.events.QUALITY_CHANGE_REQUESTED, () => {
-        console.log('清晰度切换请求')
-      })
+    if (type === 'mpd') {
+      this.dash(src)
     }
     if (type === 'flv') {
-      let flvjs = useNuxtApp().$flvjs
-      if (flvjs.isSupported()) {
-        var videoElement = video
-        var flvPlayer = flvjs.createPlayer({
-          type: 'flv',
-          url: src
-        });
-        flvPlayer.attachMediaElement(videoElement);
-        flvPlayer.load();
-        // flvPlayer.play();
-        // this.state.paused = false
-      }
+      this.flv(src)
     }
     if (type === 'mp4') {
-      this.video.src = src
-      this.video.addEventListener('loadedmetadata', () => {
-        // this.video.play()
-        // this.state.paused = false
-      })
+      this.mp4(src)
     }
+    this.initVideoEvent()
+  }
+  private initVideoEvent() {
     this.video.addEventListener('canplay', () => {
       console.log('canplay')
       this.state.canplay = true
@@ -168,6 +122,7 @@ export class GuoPlayer {
     })
     this.video.addEventListener('playing', () => {
       console.log('playing初次播放，暂停后恢复或结束后重新开始')
+      this.state.paused = false
     })
     this.video.addEventListener('abort', () => {
       console.log('abort 在播放被终止时触发，比如当播放中的视频重新开始播放时')
@@ -177,7 +132,7 @@ export class GuoPlayer {
       this.state.paused = true
     })
     this.video.addEventListener('progress', () => {
-      this.state.bufferPercentage = this.video.buffered.length ? this.video.buffered.end(video.buffered.length - 1) / this.video.duration : 0;
+      this.state.bufferPercentage = this.video.buffered.length ? this.video.buffered.end(this.video.buffered.length - 1) / this.video.duration : 0;
     })
     this.video.addEventListener('loadedmetadata', () => {
       this.state.duration = this.video.duration * 1000
@@ -186,26 +141,171 @@ export class GuoPlayer {
       this.state.error = true
     })
   }
-  get Muted(): boolean {
-    return this.video.defaultMuted;
+  private hls(src: string) {
+    const Hls = useNuxtApp().$Hls
+    if (Hls.isSupported()) {
+      const hls = this.state.player = new Hls(
+        {
+          startLevel: -1
+        }
+      );
+      hls.loadSource(src)
+      hls.attachMedia(this.video);
+      hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
+
+        hls.once(Hls.Events.LEVEL_SWITCHED, (_, currentData) => {
+          // 你可以在这里执行切换完成后的逻辑
+          const currentLevel = currentData.level
+          console.log(currentLevel, 'currentLevel')
+          const levels = data.levels;
+          levels.forEach((item, index) => {
+            if (QUALITY[item.height]) {
+              let obj: Quality = {
+                label: QUALITY[item.height] as string,
+                representation: item
+              }
+              this.state.qualityList.push(obj)
+              if (currentLevel === index) {
+                this.state.currentQuality = obj
+                this.state.currentRepresentation = item
+              }
+            }
+          });
+          this.state.qualityList = this.state.qualityList.sort((a, b) => b.representation.height - a.representation.height)
+          if (currentLevel === -1) {
+            this.state.currentQuality = this.state.qualityList[length]!
+            this.state.currentRepresentation = this.state.qualityList[length]?.representation
+          }
+          if (this.state.autoPlay) {
+            this.video.play()
+          }
+        });
+      });
+    } else if (this.video.canPlayType('application/vnd.apple.mpegurl')) {
+      this.video.src = src
+      if (this.state.autoPlay) {
+        this.video.play()
+      }
+    }
   }
-  get rate(): number {
-    return this.video.defaultPlaybackRate;
+  private dash(src: string) {
+    let dash = useNuxtApp().$dash
+    let video = this.video
+    const player = this.state.player = dash
+      .MediaPlayer()
+      .create()
+    player.initialize(
+      video,
+      src,
+      this.state.autoPlay // 自动播放
+    )
+    player.updateSettings({
+      streaming: {
+        abr: {
+          autoSwitchBitrate: {
+            video: false, // 自动切换视频清晰度
+            audio: false // 自动切换音频清晰度
+          }
+        },
+        buffer: {
+          flushBufferAtTrackSwitch: true,
+
+          // When enabled, after a track switch and in case buffer is being replaced, the video element is flushed (seek at current playback time) once a segment of the new track is appended in buffer in order to force video decoder to play new track.
+          // 当启用时，在轨道切换后以及缓冲区正在被替换的情况下，每当新轨道的一段被追加到缓冲区中时，视频元素会刷新（在当前播放时间处进行定位），以强制视频解码器播放新轨道。
+
+          // This can be required on some devices like GoogleCast devices to make track switching functional.
+          // 在某些设备上，如 GoogleCast 设备，可能需要这样做才能使轨道切换功能正常工作。
+
+          // Otherwise, track switching will be effective only once after previous buffered track is fully consumed.
+          // 否则，轨道切换只有在之前的缓冲轨道完全被消耗后才会生效一次。
+          fastSwitchEnabled: true,  // 开启快速切换 segment（重点！）
+        },
+      }
+    })
+    const getQuality = (e: dashjs.StreamInitializedEvent) => {
+      this.state.representation = player!.getRepresentationsByType('video');
+      this.state.currentRepresentation = player!.getCurrentRepresentationForType('video');
+      this.state.qualityList = []
+      for (let item of this.state.representation!) {
+        if (QUALITY[item.height]) {
+          let obj: Quality = {
+            label: QUALITY[item.height] as string,
+            representation: item
+          }
+          this.state.qualityList.push(obj)
+          if (item.id === this.state.currentRepresentation?.id) {
+            this.state.currentQuality = obj
+          }
+        }
+      }
+      this.state.qualityList = this.state.qualityList.sort((a, b) => b.representation.height - a.representation.height)
+      // player.off(dash.MediaPlayer.events.STREAM_INITIALIZED, getQuality)
+    }
+    player.on(dash.MediaPlayer.events.STREAM_INITIALIZED, getQuality)
+
+    // 监听画质切换完成事件，只监听一次
+    // this.state.player.on(dash.MediaPlayer.events.QUALITY_CHANGE_RENDERED, () => {
+    //   console.log('清晰度切换完成')
+    // })
+    // this.state.player.on(dash.MediaPlayer.events.QUALITY_CHANGE_REQUESTED, () => {
+    //   console.log('清晰度切换请求')
+    // })
   }
-  get readyState(): number {
-    //  0 没有信息，视频未准备好
-    //  1 视频元数据已准备
-    //  2 视频当前位置数据可用，但是下一帧数据没有
-    //  3 当前和至少下一帧数据可用
-    //  4 有足够的数据可以播放
-    return this.video.readyState;
+  private flv(src: string) {
+    let flvjs = useNuxtApp().$flvjs
+    if (flvjs.isSupported()) {
+      var videoElement = this.video
+      var flvPlayer = flvjs.createPlayer({
+        type: 'flv',
+        url: src
+      });
+      flvPlayer.attachMediaElement(videoElement);
+      flvPlayer.load();
+      if (this.state.autoPlay) {
+        flvPlayer.play();
+      }
+    }
   }
-  get networkState(): number {
-    //  0 还没初始化
-    //  1 处于活跃状态，但还没使用网络
-    //  2 浏览器在下载数据
-    //  3 没有找到数据源
-    return this.video.networkState;
+  private mp4(src: string) {
+    this.video.src = src
+    if (this.state.autoPlay) {
+      this.video.autoplay = true
+    }
+  }
+  src(newSrc: string, type: string) {
+    this.state.qualityList = []
+    this.state.currentQuality = null
+    if (type !== this.state.type) {
+      if (this.state.player) {
+        if (this.state.type == 'mpd') {
+          (this.state.player as dashjs.MediaPlayerClass).reset();
+        }
+        this.state.player = null
+
+      }
+      this.state.type = type
+      if (type == 'mpd') {
+        if (this.state.player) {
+          (this.state.player as Hls)?.destroy()
+        }
+        this.dash(newSrc)
+      } else if (type == 'm3u8') {
+        if (this.state.player) {
+          (this.state.player as dashjs.MediaPlayerClass).reset()
+        }
+        this.hls(newSrc)
+      }
+    } else {
+      if (type == 'mpd') {
+        (this.state.player as dashjs.MediaPlayerClass)?.attachSource(newSrc)
+      } else if (type == 'm3u8') {
+        this.state.player?.destroy()
+        this.hls(newSrc)
+      }
+    }
+    if (type == 'mp4') {
+      this.mp4(newSrc)
+    }
   }
   play() {
     const playPromse = this.video.play()
@@ -237,10 +337,6 @@ export class GuoPlayer {
 
   rateChange(rate: number) {
     this.video.playbackRate = rate
-  }
-
-  subtitlesChange(subtitles: Array<any>) {
-    this.subtitles = subtitles
   }
 
   pictureInPicture() {
@@ -297,11 +393,31 @@ export class GuoPlayer {
       });
     }
   }
-  toggleQuality(item: IQuality) {
-    this.state.player!.setRepresentationForTypeByIndex('video', item.representation.index, true);
-    // this.state.player!.setRepresentationForTypeById('video', Number(item.representation.id), true);
+  async toggleQuality(item: Quality) {
+    if (!this.state.representation) return
+    if (this.state.type === 'm3u8') {
+      const Hls = useNuxtApp().$Hls
+      let player = this.state.player as Hls
+      const targetLevelIndex = player.levels.findIndex((level) => level.height === item.representation.height);
+      player.nextLevel = targetLevelIndex;
+      // player.currentLevel = targetLevelIndex;
+      player.once(Hls.Events.LEVEL_SWITCHED, () => {
+        // 你可以在这里执行切换完成后的逻辑
+        // console.log("切换完成", player.currentLevel)
+        // this.state.currentQuality = item;
+      });
+    }
+    if (this.state.type === 'mpd') {
+      let dash = useNuxtApp().$dash
+      let player = this.state.player as dashjs.MediaPlayerClass
+      player.setRepresentationForTypeByIndex('video', (item.representation as dashjs.Representation).index, true);
+      player.on(dash.MediaPlayer.events.QUALITY_CHANGE_RENDERED, () => {
+        // console.log('清晰度切换完成')
+        // this.state.currentQuality = item;
+      })
+    }
     this.state.currentQuality = item;
-    console.log(this.state.currentQuality, '切换了')
+    // this.state.player!.setRepresentationForTypeById('video', Number(item.representation.id), true);
   }
   screenshot() {
     const canvas: HTMLCanvasElement = document.createElement('canvas')
@@ -322,11 +438,4 @@ export class GuoPlayer {
       URL.revokeObjectURL(url)
     }, 'image/png')
   }
-  forward() {
-
-  }
-  back() {
-
-  }
-
 }
