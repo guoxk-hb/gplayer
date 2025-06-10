@@ -1,10 +1,10 @@
 
 import type { Level } from 'hls.js';
+import type { Quality, VideoOptions } from '~/types';
 import type Hls from 'hls.js';
-import type { Quality } from '~/types';
+import type { Representation, MediaPlayerClass, StreamInitializedEvent } from 'dashjs'
 
-
-type PlayerType = dashjs.MediaPlayerClass | null | Hls
+type PlayerType = MediaPlayerClass | null | Hls
 
 interface videoState {
   paused: boolean
@@ -17,18 +17,19 @@ interface videoState {
   isFullscreen: boolean
   isPictureInPicture: boolean
   error: boolean
-  representation?: dashjs.Representation[] | Level[]
-  currentRepresentation?: dashjs.Representation | null | Level
+  representation?: Representation[] | Level[]
+  currentRepresentation?: Representation | null | Level
   qualityList: Array<Quality>,
   currentQuality: Quality | null
   player: PlayerType
   type: string | null
   src: string
-  autoPlay: boolean
+  options: VideoOptions
 }
 
 
 enum QUALITY {
+  '自动' = -1,
   '流畅' = 480,
   '高清' = 720,
   '超清' = 1080,
@@ -54,37 +55,24 @@ export class GuoPlayer {
       player: null,
       type: null,
       src: '',
-      autoPlay: false
+      options: {
+        autoplay: false,
+        muted: false,
+        loop: false,
+        preload: 'auto'
+      }
     }
   )
-  constructor(video: HTMLVideoElement, src: string, type: string, autoPlay: boolean = false) {
+  constructor(video: HTMLVideoElement, src: string, type: string, options: VideoOptions) {
     this.video = video
     this.state.src = src
     this.state.type = type
-    this.state.autoPlay = autoPlay
+    this.state.options = options
+    if (options.muted) {
+      this.video.muted = true
+    }
     this.init(video, src, type)
   }
-  // get Muted(): boolean {
-  //   return this.video.defaultMuted;
-  // }
-  // get rate(): number {
-  //   return this.video.defaultPlaybackRate;
-  // }
-  // get readyState(): number {
-  //   //  0 没有信息，视频未准备好
-  //   //  1 视频元数据已准备
-  //   //  2 视频当前位置数据可用，但是下一帧数据没有
-  //   //  3 当前和至少下一帧数据可用
-  //   //  4 有足够的数据可以播放
-  //   return this.video.readyState;
-  // }
-  // get networkState(): number {
-  //   //  0 还没初始化
-  //   //  1 处于活跃状态，但还没使用网络
-  //   //  2 浏览器在下载数据
-  //   //  3 没有找到数据源
-  //   return this.video.networkState;
-  // }
 
   private init(video: HTMLVideoElement, src: string, type: string) {
     if (type === 'm3u8') {
@@ -103,11 +91,11 @@ export class GuoPlayer {
   }
   private initVideoEvent() {
     this.video.addEventListener('canplay', () => {
-      console.log('canplay')
+      // console.log('canplay')
       this.state.canplay = true
     })
     this.video.addEventListener('waiting', () => {
-      console.log('waiting')
+      // console.log('waiting')
       this.state.canplay = false
     })
     this.video.addEventListener('timeupdate', (e) => {
@@ -115,20 +103,20 @@ export class GuoPlayer {
       this.state.playPercentage = this.state.currentTime / this.state.duration
     })
     this.video.addEventListener('pause', () => {
-      console.log('pause')
+      // console.log('pause')
     })
     this.video.addEventListener('play', () => {
-      console.log('play')
+      // console.log('play')
     })
     this.video.addEventListener('playing', () => {
-      console.log('playing初次播放，暂停后恢复或结束后重新开始')
+      // console.log('playing初次播放，暂停后恢复或结束后重新开始')
       this.state.paused = false
     })
     this.video.addEventListener('abort', () => {
-      console.log('abort 在播放被终止时触发，比如当播放中的视频重新开始播放时')
+      // console.log('abort 在播放被终止时触发，比如当播放中的视频重新开始播放时')
     })
     this.video.addEventListener('ended', () => {
-      console.log('paused')
+      // console.log('paused')
       this.state.paused = true
     })
     this.video.addEventListener('progress', () => {
@@ -156,7 +144,6 @@ export class GuoPlayer {
         hls.once(Hls.Events.LEVEL_SWITCHED, (_, currentData) => {
           // 你可以在这里执行切换完成后的逻辑
           const currentLevel = currentData.level
-          console.log(currentLevel, 'currentLevel')
           const levels = data.levels;
           levels.forEach((item, index) => {
             if (QUALITY[item.height]) {
@@ -169,21 +156,29 @@ export class GuoPlayer {
                 this.state.currentQuality = obj
                 this.state.currentRepresentation = item
               }
+
             }
           });
-          this.state.qualityList = this.state.qualityList.sort((a, b) => b.representation.height - a.representation.height)
+          // this.state.qualityList.push({
+          //   label: QUALITY[-1] as string
+          // })
+          this.state.qualityList = this.state.qualityList.sort((a, b) => {
+            let aKey = a.label as keyof typeof QUALITY
+            let bKey = b.label as keyof typeof QUALITY
+            return QUALITY[bKey] - QUALITY[aKey]
+          })
           if (currentLevel === -1) {
             this.state.currentQuality = this.state.qualityList[length]!
-            this.state.currentRepresentation = this.state.qualityList[length]?.representation
+            this.state.currentRepresentation = null
           }
-          if (this.state.autoPlay) {
+          if (this.state.options.autoplay) {
             this.video.play()
           }
         });
       });
     } else if (this.video.canPlayType('application/vnd.apple.mpegurl')) {
       this.video.src = src
-      if (this.state.autoPlay) {
+      if (this.state.options.autoplay) {
         this.video.play()
       }
     }
@@ -197,7 +192,7 @@ export class GuoPlayer {
     player.initialize(
       video,
       src,
-      this.state.autoPlay // 自动播放
+      this.state.options.autoplay // 自动播放
     )
     player.updateSettings({
       streaming: {
@@ -222,7 +217,7 @@ export class GuoPlayer {
         },
       }
     })
-    const getQuality = (e: dashjs.StreamInitializedEvent) => {
+    const getQuality = (e: StreamInitializedEvent) => {
       this.state.representation = player!.getRepresentationsByType('video');
       this.state.currentRepresentation = player!.getCurrentRepresentationForType('video');
       this.state.qualityList = []
@@ -238,7 +233,14 @@ export class GuoPlayer {
           }
         }
       }
-      this.state.qualityList = this.state.qualityList.sort((a, b) => b.representation.height - a.representation.height)
+      // this.state.qualityList.push({
+      //   label: QUALITY[-1] as string
+      // })
+      this.state.qualityList = this.state.qualityList.sort((a, b) => {
+        let aKey = a.label as keyof typeof QUALITY
+        let bKey = b.label as keyof typeof QUALITY
+        return QUALITY[bKey] - QUALITY[aKey]
+      })
       // player.off(dash.MediaPlayer.events.STREAM_INITIALIZED, getQuality)
     }
     player.on(dash.MediaPlayer.events.STREAM_INITIALIZED, getQuality)
@@ -261,14 +263,14 @@ export class GuoPlayer {
       });
       flvPlayer.attachMediaElement(videoElement);
       flvPlayer.load();
-      if (this.state.autoPlay) {
+      if (this.state.options.autoplay) {
         flvPlayer.play();
       }
     }
   }
   private mp4(src: string) {
     this.video.src = src
-    if (this.state.autoPlay) {
+    if (this.state.options.autoplay) {
       this.video.autoplay = true
     }
   }
@@ -278,7 +280,7 @@ export class GuoPlayer {
     if (type !== this.state.type) {
       if (this.state.player) {
         if (this.state.type == 'mpd') {
-          (this.state.player as dashjs.MediaPlayerClass).reset();
+          (this.state.player as MediaPlayerClass).reset();
         }
         this.state.player = null
 
@@ -291,13 +293,13 @@ export class GuoPlayer {
         this.dash(newSrc)
       } else if (type == 'm3u8') {
         if (this.state.player) {
-          (this.state.player as dashjs.MediaPlayerClass).reset()
+          (this.state.player as MediaPlayerClass).reset()
         }
         this.hls(newSrc)
       }
     } else {
       if (type == 'mpd') {
-        (this.state.player as dashjs.MediaPlayerClass)?.attachSource(newSrc)
+        (this.state.player as MediaPlayerClass)?.attachSource(newSrc)
       } else if (type == 'm3u8') {
         this.state.player?.destroy()
         this.hls(newSrc)
@@ -311,7 +313,7 @@ export class GuoPlayer {
     const playPromse = this.video.play()
     if (playPromse) {
       playPromse.catch((err) => {
-        console.log(`尝试播放视频发生错误：${err.message}（${err.name}）`)
+        console.error(`尝试播放视频发生错误：${err.message}（${err.name}）`)
         this.pause()
       })
     }
@@ -322,13 +324,23 @@ export class GuoPlayer {
     this.state.paused = true
   }
 
-  mute() {
+  muted() {
     this.video.muted = true
   }
 
   volumeChange(volume: number) {
+    this.toggleMuted()
     this.state.volume = this.video.volume = volume
   }
+
+  toggleMuted() {
+    if (this.video.muted) {
+      this.state.options.muted = this.video.muted = false
+    } else {
+      this.state.options.muted = this.video.muted = true
+    }
+  }
+
 
   timeChange(time: number) {
     this.video.currentTime = time / 1000 // 转换为秒
@@ -344,7 +356,6 @@ export class GuoPlayer {
       this.video.requestPictureInPicture().then(() => {
         this.state.isPictureInPicture = true
         const cb = () => {
-          console.log('已退出画中画模式');
           // 在这里可以添加自定义的退出逻辑
           this.state.isPictureInPicture = false
           this.video.removeEventListener('leavepictureinpicture', cb)
@@ -352,7 +363,7 @@ export class GuoPlayer {
         // 监听退出画中画模式事件
         this.video.addEventListener('leavepictureinpicture', cb);
       }).catch((err) => {
-        console.log(`尝试切换到画中画模式时发生错误：${err.message}（${err.name}）`)
+        console.error(`尝试切换到画中画模式时发生错误：${err.message}（${err.name}）`)
       })
     }
   }
@@ -362,13 +373,12 @@ export class GuoPlayer {
       document.exitPictureInPicture().then(() => {
         this.state.isPictureInPicture = false
       }).catch((err) => {
-        console.log(`尝试退出画中画模式时发生错误：${err.message}（${err.name}）`)
+        console.error(`尝试退出画中画模式时发生错误：${err.message}（${err.name}）`)
       });
     }
   }
 
   fullScreen(playerRef: HTMLDivElement) {
-    console.log('进入全屏模式', playerRef)
     if (playerRef.requestFullscreen) {
       playerRef.requestFullscreen().then(() => {
         this.state.isFullscreen = true
@@ -380,7 +390,7 @@ export class GuoPlayer {
         };
         document.addEventListener('fullscreenchange', cb);
       }).catch((err) => {
-        console.log(`尝试切换到全屏模式时发生错误：${err.message}（${err.name}）`)
+        console.error(`尝试切换到全屏模式时发生错误：${err.message}（${err.name}）`)
       })
     }
   }
@@ -389,7 +399,7 @@ export class GuoPlayer {
       document.exitFullscreen().then(() => {
         this.state.isFullscreen = false
       }).catch((err) => {
-        console.log(`尝试退出全屏模式时发生错误：${err.message}（${err.name}）`)
+        console.error(`尝试退出全屏模式时发生错误：${err.message}（${err.name}）`)
       });
     }
   }
@@ -398,30 +408,32 @@ export class GuoPlayer {
     if (this.state.type === 'm3u8') {
       const Hls = useNuxtApp().$Hls
       let player = this.state.player as Hls
-      const targetLevelIndex = player.levels.findIndex((level) => level.height === item.representation.height);
-      // player.nextLevel = targetLevelIndex;
+      let targetLevelIndex = null
+      if (QUALITY[item.label as keyof typeof QUALITY] === -1) {
+        targetLevelIndex = -1
+      } else {
+        targetLevelIndex = player.levels.findIndex((level) => level.height === item.representation!.height);
+      }
       this.video.pause()
+      this.state.canplay = false
       player.currentLevel = targetLevelIndex;
       const currentTime = this.video.currentTime
       player.once(Hls.Events.LEVEL_SWITCHED, () => {
         // 你可以在这里执行切换完成后的逻辑
-        // console.log("切换完成", player.currentLevel)
         this.video.currentTime = currentTime; // 定位到原时间点
         this.video.play()
-        // this.state.currentQuality = item;
+        this.state.canplay = true
       });
     }
     if (this.state.type === 'mpd') {
       let dash = useNuxtApp().$dash
-      let player = this.state.player as dashjs.MediaPlayerClass
-      player.setRepresentationForTypeByIndex('video', (item.representation as dashjs.Representation).index, true);
+      let player = this.state.player as MediaPlayerClass
+      player.setRepresentationForTypeByIndex('video', (item.representation as Representation).index, true);
       player.on(dash.MediaPlayer.events.QUALITY_CHANGE_RENDERED, () => {
         // console.log('清晰度切换完成')
-        // this.state.currentQuality = item;
       })
     }
     this.state.currentQuality = item;
-    // this.state.player!.setRepresentationForTypeById('video', Number(item.representation.id), true);
   }
   screenshot() {
     const canvas: HTMLCanvasElement = document.createElement('canvas')
@@ -442,4 +454,29 @@ export class GuoPlayer {
       URL.revokeObjectURL(url)
     }, 'image/png')
   }
+  destroy() {
+    // console.log("销毁了")
+  }
 }
+
+// get Muted(): boolean {
+//   return this.video.defaultMuted;
+// }
+// get rate(): number {
+//   return this.video.defaultPlaybackRate;
+// }
+// get readyState(): number {
+//   //  0 没有信息，视频未准备好
+//   //  1 视频元数据已准备
+//   //  2 视频当前位置数据可用，但是下一帧数据没有
+//   //  3 当前和至少下一帧数据可用
+//   //  4 有足够的数据可以播放
+//   return this.video.readyState;
+// }
+// get networkState(): number {
+//   //  0 还没初始化
+//   //  1 处于活跃状态，但还没使用网络
+//   //  2 浏览器在下载数据
+//   //  3 没有找到数据源
+//   return this.video.networkState;
+// }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { VideoInfo, Quality } from '~/types';
+import type { VideoInfo } from '~/types';
 
 const inputRef = useTemplateRef<HTMLInputElement | null>('inputRef');
 
@@ -9,17 +9,15 @@ async function uploadLyric() {
   if (files && files.length > 0) {
     const formData = new FormData();
     formData.append('file', files[0] as File);
-    const { data, error } = await useFetch('/api/lyric', {
+    const data = await $fetch('/api/lyric', {
       method: 'POST',
       body: formData,
     });
-    if (error.value) {
-      alert('请上传lrc或srt文件');
-      console.error(error);
-    }
-    if (data.value) {
+    if ('error' in data) {
+      console.error(data.error);
+    } else {
       // 1. 把 JSON 对象转成字符串
-      const jsonString = JSON.stringify(data.value, null, 2);
+      const jsonString = JSON.stringify(data, null, 2);
 
       // 2. 创建一个 Blob 对象，类型是 json
       const blob = new Blob([jsonString], { type: 'application/json' });
@@ -32,14 +30,14 @@ async function uploadLyric() {
       a.href = url;
       const filenameArr = files[0]!.name.split('.');
       let filename = '';
-      for (let index in filenameArr) {
-        if (Number(index) == filenameArr.length - 1) {
+      for (const index in filenameArr) {
+        if (Number(index) === filenameArr.length - 1) {
           filename += '.json';
         } else {
-          filename += filenameArr[index];
+          filename = filename + filenameArr[index];
         }
       }
-      a.download = files[0]!.name.split('.')[0] + '.json'; // 下载的文件名
+      a.download = `${files[0]!.name.split('.')[0]}.json`; // 下载的文件名
 
       // 5. 触发点击
       a.click();
@@ -120,10 +118,10 @@ const videoList: VideoInfo[] = [
         lang: 'cmn',
         label: '中文',
       },
-      // {
-      //   lang: 'kor',
-      //   label: '韩文',
-      // },
+      {
+        lang: 'kor',
+        label: '韩文',
+      },
     ],
   },
 ];
@@ -131,22 +129,22 @@ const videoList: VideoInfo[] = [
 
 <template>
   <div class="mx-auto mt-20 w-[800px]">
-    <GVideo :videoList="videoList" :autoplay="true" />
+    <GVideo :video-list="videoList" :autoplay="true" />
     <div class="mt-4">
       <label
         for="file-upload"
-        class="inline-flex cursor-pointer items-center rounded-2xl bg-violet-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors duration-200 hover:bg-blue-700"
+        class="inline-flex cursor-pointer items-center rounded-2xl bg-violet-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors duration-200 hover:bg-violet-700"
       >
         📎 上传歌词
       </label>
       <input
-        ref="inputRef"
         id="file-upload"
+        ref="inputRef"
         type="file"
         class="hidden"
         @change="uploadLyric"
       />
-      <NuxtTime :datetime="new Date()"></NuxtTime>
+      <NuxtTime datetime="2025-06-10" />
     </div>
   </div>
 </template>

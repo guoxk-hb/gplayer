@@ -1,150 +1,37 @@
 <script setup lang="ts">
-import type { VideoInfo, Subtitle, VideoSubtitle } from '~/types';
-
-const videoRef = useTemplateRef<HTMLVideoElement>('video');
-let media: Ref<null | GuoPlayer> = ref(null);
-onMounted(() => {
-  media.value = new GuoPlayer(
-    videoRef.value as HTMLVideoElement,
-    currentVideo.value.url,
-    currentVideo.value.type,
-    autoplay,
-  );
-  // 初始调整
-  adjustFontSize();
-  const observer = new ResizeObserver(() => {
-    adjustFontSize();
-  });
-  observer.observe(playerRef.value as HTMLDivElement);
-});
-
-interface Props {
-  videoList?: VideoInfo[];
-  conterols?: boolean;
-  mute?: boolean;
-  autoplay?: boolean;
-  loop?: boolean;
-  fluid?: boolean;
-  volume?: number;
-  subtitlesButton?: boolean;
-}
+import type { Representation } from 'dashjs';
+import type { Subtitle, VideoInfo, VideoSubtitle } from '~/types';
 
 const {
   videoList = [],
   conterols = true,
-  mute = false,
-  autoplay = true,
+  muted = true,
+  autoplay = false,
   loop = false,
-  fluid = false,
+  // fluid = false,
+  preload = 'auto',
   volume: PropVolume = 1,
   subtitlesButton = true,
 } = defineProps<Props>();
 
+const videoRef = useTemplateRef<HTMLVideoElement>('video');
+
+const media: Ref<null | GuoPlayer> = ref(null);
+
+interface Props {
+  videoList?: VideoInfo[];
+  conterols?: boolean;
+  muted?: boolean;
+  autoplay?: boolean;
+  loop?: boolean;
+  // fluid?: boolean;
+  volume?: number;
+  subtitlesButton?: boolean;
+  preload?: string;
+}
+
 const index = ref(0);
 const currentVideo = ref(videoList[index.value]) as Ref<VideoInfo>;
-
-let clickTimer: NodeJS.Timeout | null = null;
-
-const playOrPause = (e: PointerEvent) => {
-  if (e.detail < 2)
-    clickTimer = setTimeout(() => {
-      if (media.value) {
-        if (paused.value) {
-          media.value.play();
-        } else {
-          media.value.pause();
-        }
-      }
-      clickTimer = null;
-    }, 200); // 250ms 是一个合适的判断间隔
-};
-
-function volumeChange(event: Event) {
-  const target = event.target as HTMLInputElement;
-  if (media.value) {
-    media.value.volumeChange(parseFloat(target.value));
-    initVolume.value = parseFloat(target.value);
-  }
-}
-
-const playerRef = useTemplateRef<HTMLDivElement>('guoPlayer');
-
-const progressRef = useTemplateRef<HTMLDivElement>('progressRef');
-
-const thumbRef = useTemplateRef<HTMLDivElement>('thumbRef');
-
-let isMove = false;
-
-function onBarPointStart(event: PointerEvent) {
-  event.preventDefault();
-  isMove = true;
-  thumbRef.value!.setPointerCapture(event.pointerId);
-}
-
-function onBarPointMove(event: PointerEvent) {
-  if (!isMove) return;
-  let newLeft = event.clientX - progressRef.value!.getBoundingClientRect().left;
-  if (newLeft < 0) {
-    newLeft = 0;
-  }
-  let rightEdge = progressRef.value!.offsetWidth - thumbRef.value!.offsetWidth;
-  if (newLeft > rightEdge) {
-    newLeft = rightEdge;
-  }
-  const percentage = newLeft / progressRef.value!.offsetWidth;
-  thumbRef.value!.style.left = percentage * 100 + '%';
-}
-
-function onBarPointEnd(event: PointerEvent) {
-  isMove = false;
-  if (media.value) {
-    const percentage = Number(thumbRef.value!.style.left.split('%')[0]) / 100;
-    media.value.timeChange(percentage * media.value.state.duration); // 根据百分比计算新的时间
-  }
-}
-
-function changeTime(event: PointerEvent) {
-  event.preventDefault();
-  if (media.value) {
-    const target = event.target as HTMLDivElement;
-    const rect = target.getBoundingClientRect();
-    const x = event.clientX - rect.left; // 鼠标点击位置相对于进度条的左边距
-    const percentage = x / progressRef.value!.offsetWidth; // 计算点击位置的百分比
-    media.value.timeChange(percentage * media.value.state.duration); // 根据百分比计算新的时间
-    thumbRef.value!.style.left = percentage * 100 + '%';
-    console.log(x, rect);
-  }
-}
-
-function togglefullScrren(e: MouseEvent) {
-  if (clickTimer) {
-    clearTimeout(clickTimer);
-    clickTimer = null;
-  }
-  e.stopPropagation();
-  if (media.value) {
-    if (!isFullscreen.value) {
-      media.value.fullScreen(playerRef.value as HTMLDivElement);
-    } else {
-      media.value.exitFullScreen();
-    }
-  }
-}
-
-function togglePictureInPicture() {
-  if (media.value) {
-    if (!isPictureInPicture.value) {
-      media.value.pictureInPicture();
-    } else {
-      media.value.exitPictureInPicture();
-    }
-  }
-}
-
-interface Quality {
-  label: string;
-  representation: dashjs.Representation;
-}
 
 function toggleQuality(item: Quality) {
   if (media.value) {
@@ -165,18 +52,16 @@ const canplay = computed(() => {
   return media.value?.state.canplay;
 });
 
+const videoMuted = computed(() => {
+  return media.value?.state.options?.muted;
+});
+
 const currentTime = computed(() => {
   if (media.value) {
     return useDateFormat(media.value.state.currentTime, 'mm:ss');
   } else {
     return '00:00';
   }
-});
-
-watchEffect(() => {
-  if (media.value)
-    thumbRef.value!.style.left =
-      (media.value.state.currentTime / media.value.state.duration) * 100 + '%';
 });
 
 const duration = computed(() => {
@@ -188,9 +73,9 @@ const duration = computed(() => {
 });
 const initVolume = ref(PropVolume);
 
-const volume = computed(() => {
-  return media.value?.state.volume;
-});
+// const volume = computed(() => {
+//   return media.value?.state.volume;
+// });
 
 const playPercentage = computed(() => {
   if (media.value) {
@@ -225,22 +110,113 @@ const currentQuality = computed(() => {
   return media.value?.state.currentQuality;
 });
 
+let clickTimer: NodeJS.Timeout | null = null;
+
+function playOrPause(e: PointerEvent) {
+  if (e.detail < 2) {
+    clickTimer = setTimeout(() => {
+      if (media.value) {
+        if (paused.value) {
+          media.value.play();
+        } else {
+          media.value.pause();
+        }
+      }
+      clickTimer = null;
+    }, 200);
+  } // 250ms 是一个合适的判断间隔
+}
+
+function volumeChange(event: Event) {
+  const target = event.target as HTMLInputElement;
+  if (media.value) {
+    media.value.volumeChange(Number.parseFloat(target.value));
+    initVolume.value = Number.parseFloat(target.value);
+  }
+}
+
+const playerRef = useTemplateRef<HTMLDivElement>('guoPlayer');
+
+const progressRef = useTemplateRef<HTMLDivElement>('progressRef');
+
+const thumbRef = useTemplateRef<HTMLDivElement>('thumbRef');
+
+let isMove = false;
+
+function onBarPointStart(event: PointerEvent) {
+  event.preventDefault();
+  isMove = true;
+  thumbRef.value!.setPointerCapture(event.pointerId);
+}
+
+function onBarPointMove(event: PointerEvent) {
+  if (!isMove) return;
+  let newLeft = event.clientX - progressRef.value!.getBoundingClientRect().left;
+  if (newLeft < 0) {
+    newLeft = 0;
+  }
+  const rightEdge =
+    progressRef.value!.offsetWidth - thumbRef.value!.offsetWidth;
+  if (newLeft > rightEdge) {
+    newLeft = rightEdge;
+  }
+  const percentage = newLeft / progressRef.value!.offsetWidth;
+  thumbRef.value!.style.left = `${percentage * 100}%`;
+}
+
+function onBarPointEnd() {
+  isMove = false;
+  if (media.value) {
+    const percentage = Number(thumbRef.value!.style.left.split('%')[0]) / 100;
+    media.value.timeChange(percentage * media.value.state.duration); // 根据百分比计算新的时间
+  }
+}
+
+function changeTime(event: PointerEvent) {
+  event.preventDefault();
+  if (media.value) {
+    const target = event.target as HTMLDivElement;
+    const rect = target.getBoundingClientRect();
+    const x = event.clientX - rect.left; // 鼠标点击位置相对于进度条的左边距
+    const percentage = x / progressRef.value!.offsetWidth; // 计算点击位置的百分比
+    media.value.timeChange(percentage * media.value.state.duration); // 根据百分比计算新的时间
+    thumbRef.value!.style.left = `${percentage * 100}%`;
+  }
+}
+
+function togglefullScrren(e: MouseEvent) {
+  if (clickTimer) {
+    clearTimeout(clickTimer);
+    clickTimer = null;
+  }
+  e.stopPropagation();
+  if (media.value) {
+    if (!isFullscreen.value) {
+      media.value.fullScreen(playerRef.value as HTMLDivElement);
+    } else {
+      media.value.exitFullScreen();
+    }
+  }
+}
+
+function togglePictureInPicture() {
+  if (media.value) {
+    if (!isPictureInPicture.value) {
+      media.value.pictureInPicture();
+    } else {
+      media.value.exitPictureInPicture();
+    }
+  }
+}
+
+interface Quality {
+  label: string;
+  representation: Representation;
+}
+
 let subtitleList: Subtitle[] = [];
 
-// const currentLyric = computed(() => {
-//   if (media.value && lyric) {
-//     for (let item of lyric) {
-//       if (
-//         item.from <= media.value?.state.currentTime / 1000 &&
-//         item.to >= media.value?.state.currentTime / 1000
-//       ) {
-//         return item.content;
-//       }
-//     }
-//   }
-//   return '';
-// });
-const text = useTemplateRef<HTMLDivElement>('subtitlesRef');
+const subtitlesRef = useTemplateRef<HTMLDivElement>('subtitlesRef');
 
 function adjustFontSize() {
   const containerWidth = playerRef.value!.clientWidth;
@@ -250,14 +226,17 @@ function adjustFontSize() {
   const factor = 0.01; // 调整因子
   let newSize = baseSize + containerWidth * factor;
   newSize = Math.max(minSize, Math.min(newSize, maxSize)); // 确保在最小和最大值之间
-  if (!text.value) return;
-  text.value.style.fontSize = newSize + 'px';
+  if (!subtitlesRef.value) return;
+  subtitlesRef.value.style.fontSize = `${newSize}px`;
 }
+const isShowSubtitles = ref(false);
 
-async function toggleSubtitlesVisible(
-  isShow: boolean,
-  type: string = 'primary',
-) {
+const doubleSubtitle = ref(false);
+
+const primarySubtitle = ref<Subtitle | null>(null);
+const secondarySubtitle = ref<Subtitle | null>(null);
+
+async function toggleSubtitlesVisible(isShow: boolean) {
   isShowSubtitles.value = isShow;
   if (isShowSubtitles.value) {
     toggleSubtitles(currentVideo.value.subtitles[0]!, 'primary');
@@ -269,56 +248,37 @@ async function toggleSubtitlesVisible(
 
 function toggleDoubleSubtitle() {
   doubleSubtitle.value = !doubleSubtitle.value;
-  if (doubleSubtitle.value) {
+  if (doubleSubtitle.value && isShowSubtitles.value) {
     toggleSubtitles(currentVideo.value.subtitles[1]!, 'secondary');
+  }
+  if (!doubleSubtitle.value) {
+    secondarySubtitle.value = null;
   }
 }
 
 async function toggleSubtitles(item: VideoSubtitle, type: string) {
   await getLyric(item.lang, currentVideo.value.name);
-  let lyricObj = subtitleList.find((lyric) => lyric.lang == item.lang) ?? null;
-  console.log(lyricObj, subtitleList);
-  if (type == 'primary') {
+  const lyricObj =
+    subtitleList.find((lyric) => lyric.lang === item.lang) ?? null;
+  if (type === 'primary') {
     primarySubtitle.value = lyricObj;
   } else {
     secondarySubtitle.value = lyricObj;
   }
 }
 
-const primarySubtitle = ref<Subtitle | null>(null);
-const secondarySubtitle = ref<Subtitle | null>(null);
-
 async function getLyric(lang: string, name: string) {
-  if (subtitleList.find((item) => item.lang == lang)) return;
-  const { data: subtitleData, status } = await useFetch(`/api/lyric`, {
+  if (subtitleList.find((item) => item.lang === lang)) return;
+  const subtitleData = await $fetch(`/api/lyric`, {
     query: {
-      lang: lang,
-      name: name,
+      lang,
+      name,
     },
   });
-  if (subtitleData.value) {
-    subtitleList.push(subtitleData.value);
+  if (subtitleData) {
+    subtitleList.push(subtitleData);
   }
 }
-
-// watchEffect(async () => {
-//   if (controller) {
-//     controller.abort();
-//   }
-//   controller = new AbortController();
-//   const { data: lyricData, status } = await useFetch(`/api/lyric`, {
-//       signal: controller!.signal,
-//       query: {
-//         lang:currentVideo.value.subtitle[0].lang,
-//         name: currentVideo.value.name
-//       }
-//   }),
-//   lyric = lyricData.value?.body;
-// });
-
-const isShowSubtitles = ref(false);
-
-const doubleSubtitle = ref(false);
 
 function back() {
   if (index.value <= 0) {
@@ -345,18 +305,47 @@ function changeVideo(index: Ref<number>) {
   secondarySubtitle.value = null;
   currentVideo.value = videoList[index.value] as VideoInfo;
   media.value?.src(currentVideo.value.url, currentVideo.value.type);
-  if (media.value) {
-    if (autoplay) {
-      media.value.state.paused = false;
-    } else {
-      media.value.state.paused = true;
-    }
-  }
   if (currentVideo.value.subtitles.length < 2) {
     doubleSubtitle.value = false;
   }
   toggleSubtitlesVisible(false);
 }
+
+function toggleMute() {
+  media.value?.toggleMuted();
+}
+
+watchEffect(() => {
+  if (media.value) {
+    thumbRef.value!.style.left = `${(media.value.state.currentTime / media.value.state.duration) * 100}%`;
+  }
+});
+
+onMounted(() => {
+  media.value = new GuoPlayer(
+    videoRef.value as HTMLVideoElement,
+    currentVideo.value.url,
+    currentVideo.value.type,
+    {
+      autoplay,
+      muted,
+      loop,
+      preload,
+    },
+  );
+  // 初始调整
+  adjustFontSize();
+  const observer = new ResizeObserver(() => {
+    adjustFontSize();
+  });
+  observer.observe(playerRef.value as HTMLDivElement);
+});
+
+onBeforeUnmount(() => {
+  if (media.value) {
+    media.value.destroy();
+  }
+});
 </script>
 
 <template>
@@ -409,19 +398,34 @@ function changeVideo(index: Ref<number>) {
       <label>{{ '双语字幕' }}</label>
       <span>{{ doubleSubtitle }}</span>
     </div>
+    <div>
+      <label>{{ '是否静音' }}</label>
+      <span>{{ videoMuted }}</span>
+    </div>
+    <div>
+      <label>{{ '预加载模式' }}</label>
+      <span>{{ preload }}</span>
+    </div>
+    <div>
+      <label>{{ '自动播放' }}</label>
+      <span>{{ autoplay }}</span>
+    </div>
   </div>
   <div ref="guoPlayer" class="guo-player group/control relative leading-none">
     <video
-      @pointerdown.capture="playOrPause"
-      @dblclick.capture="togglefullScrren"
-      objectFit="fill"
       ref="video"
+      objectFit="fill"
       class="guo-video bg-#f3f4f6 h-full w-full"
       crossorigin="anonymous"
-    ></video>
+      :preload="preload"
+      :loop="loop"
+      :muted="muted"
+      @pointerdown.capture="playOrPause"
+      @dblclick.capture="togglefullScrren"
+    />
     <div
       v-if="false"
-      class="guo-poster absolute left-0 top-0 h-full w-full bg-gray-900/90"
+      class="guo-poster absolute left-0 top-0 z-50 h-full w-full bg-gray-900/90"
     >
       <div
         class="guo-loading-icon absolute left-1/2 top-1/2 translate-x-[-50%] translate-y-[-50%]"
@@ -431,7 +435,7 @@ function changeVideo(index: Ref<number>) {
     </div>
     <div
       v-if="!canplay"
-      class="guo-loading absolute left-0 top-0 z-20 h-full w-full bg-gray-900/90"
+      class="guo-loading absolute left-0 top-0 z-50 h-full w-full bg-gray-900/90"
     >
       <div
         class="guo-loading-icon absolute left-1/2 top-1/2 translate-x-[-50%] translate-y-[-50%]"
@@ -446,7 +450,7 @@ function changeVideo(index: Ref<number>) {
     </div>
     <div
       v-if="error"
-      class="guo-error absolute left-0 top-0 h-full w-full bg-gray-900/90"
+      class="guo-error absolute left-0 top-0 z-50 h-full w-full bg-gray-900/90"
     >
       <div
         class="guo-error-icon absolute left-1/2 top-1/2 translate-x-[-50%] translate-y-[-50%]"
@@ -456,27 +460,15 @@ function changeVideo(index: Ref<number>) {
     </div>
     <div class="absolute bottom-0 w-full">
       <div
-        ref="subtitlesRef"
         v-if="isShowSubtitles"
+        ref="subtitlesRef"
         class="guo-subtitles m-auto mb-2 w-fit text-center text-gray-200"
       >
         <div class="guo-subtitles-text">
           <div class="guo-subtitles-text-content">
-            <Transition
-              enter-active-class="transition-all duration-400 ease-in-out"
-              leave-active-class="transition-all duration-400 ease-in-out"
-              enter-from-class="opacity-0"
-              leave-to-class="opacity-0"
-              mode="out-in"
-            >
+            <div class="h-[2em]">
               <div
                 v-if="
-                  useCurrentLyric(
-                    primarySubtitle?.body ?? [],
-                    media?.state.currentTime ?? 0,
-                  )
-                "
-                :key="
                   useCurrentLyric(
                     primarySubtitle?.body ?? [],
                     media?.state.currentTime ?? 0,
@@ -491,22 +483,10 @@ function changeVideo(index: Ref<number>) {
                   )
                 }}
               </div>
-            </Transition>
-            <Transition
-              enter-active-class="transition-all duration-400 ease-in-out"
-              leave-active-class="transition-all duration-400 ease-in-out"
-              enter-from-class="opacity-0"
-              leave-to-class="opacity-0"
-              mode="out-in"
-            >
+            </div>
+            <div v-if="doubleSubtitle" class="h-[2em]">
               <div
                 v-if="
-                  useCurrentLyric(
-                    secondarySubtitle?.body ?? [],
-                    media?.state.currentTime ?? 0,
-                  )
-                "
-                :key="
                   useCurrentLyric(
                     secondarySubtitle?.body ?? [],
                     media?.state.currentTime ?? 0,
@@ -521,11 +501,12 @@ function changeVideo(index: Ref<number>) {
                   )
                 }}
               </div>
-            </Transition>
+            </div>
           </div>
         </div>
       </div>
       <div
+        v-if="conterols"
         class="guo-conrols delay-3000 flex h-0 w-full items-center gap-2 overflow-hidden bg-gray-900/50 px-2 text-gray-50 opacity-0 transition-all duration-300 ease-in-out group-hover/control:h-8 group-hover/control:overflow-visible group-hover/control:opacity-100"
       >
         <div
@@ -537,12 +518,12 @@ function changeVideo(index: Ref<number>) {
         </div>
         <div class="guo-play" @pointerdown="playOrPause">
           <Icon
-            size="20"
             v-if="paused"
+            size="20"
             name="ri:play-fill"
             style="color: #f3f4f6"
           />
-          <Icon size="20" v-else name="ri:pause-fill" style="color: #f3f4f6" />
+          <Icon v-else size="20" name="ri:pause-fill" style="color: #f3f4f6" />
         </div>
         <div
           v-if="videoList.length > 0"
@@ -551,8 +532,10 @@ function changeVideo(index: Ref<number>) {
         >
           <Icon size="20" name="ri:skip-forward-fill" style="color: #f3f4f6" />
         </div>
-        <div class="guo-current-time">{{ currentTime }}</div>
-        <div class="guo-progress flex flex-auto items-center">
+        <div class="guo-current-time">
+          {{ currentTime }}
+        </div>
+        <div class="guo-progress mr-1 flex flex-1 items-center">
           <div
             ref="progressRef"
             class="guo-progress-bar relative h-1 w-full cursor-pointer rounded-full bg-gray-400/50"
@@ -564,51 +547,62 @@ function changeVideo(index: Ref<number>) {
               ref="thumbRef"
               :style="{ left: 0 }"
               class="guo-progress-thumb absolute top-[50%] z-30 h-2 w-2 -translate-y-[50%] rounded-sm bg-violet-500"
-            ></div>
+            />
             <div
               class="guo-progress-bar-buffer absolute top-0 z-20 h-full w-full rounded-full bg-indigo-300 bg-transparent"
               @pointerdown="changeTime"
-            ></div>
+            />
             <div
-              class="guo-progress-bar-current relative z-10 h-full rounded-full bg-indigo-500 shadow-2xl shadow-indigo-500/50"
-              :style="{ width: playPercentage * 100 + '%' }"
-            ></div>
+              class="guo-progress-bar-current relative z-10 h-full rounded-l-full bg-indigo-500 shadow-2xl shadow-indigo-500/50"
+              :style="{ width: `${playPercentage * 100}%` }"
+            />
             <div
               class="guo-progress-bar-buffer absolute top-0 h-full rounded-full bg-indigo-300"
-              :style="{ width: bufferPercentage * 100 + '%' }"
-            ></div>
+              :style="{ width: `${bufferPercentage * 100}%` }"
+            />
           </div>
         </div>
-        <div class="guo-time">{{ duration }}</div>
+        <div class="guo-time">
+          {{ duration }}
+        </div>
         <div class="guo-volume group/volume relative flex overflow-hidden">
           <div class="group-hover/volume:pr-2">
             <Icon
+              v-show="initVolume === 0 || videoMuted"
               size="20"
-              :name="
-                volumnIconDict[
-                  initVolume === 0 ? 0 : initVolume > 0.5 ? 1 : 0.5
-                ]
-              "
+              :name="volumnIconDict[0]"
               style="color: #f3f4f6"
+              @click="toggleMute"
+            />
+            <Icon
+              v-show="0 < initVolume && initVolume <= 0.5 && !videoMuted"
+              size="20"
+              :name="volumnIconDict[0.5]"
+              style="color: #f3f4f6"
+              @click="toggleMute"
+            />
+            <Icon
+              v-show="0.5 < initVolume && initVolume <= 1 && !videoMuted"
+              size="20"
+              :name="volumnIconDict[1]"
+              style="color: #f3f4f6"
+              @click="toggleMute"
             />
           </div>
           <div
             class="w-0 overflow-hidden leading-[10px] shadow transition-all duration-300 ease-in-out group-hover/volume:w-24"
           >
             <input
-              @input="volumeChange"
               type="range"
               class="guo-volume-bar w-full cursor-pointer appearance-none rounded-full"
               min="0"
               max="1"
               step="0.01"
               :value="initVolume"
+              @input="volumeChange"
             />
           </div>
         </div>
-        <!-- <div class="guo-subtitles">
-          <div v-for="item in qualityList" :key="item.label">{{item.label}}</div>
-        </div> -->
         <div
           v-if="currentQuality"
           class="guo-quality group/quality relative h-8 select-none leading-8"
@@ -620,11 +614,13 @@ function changeVideo(index: Ref<number>) {
             class="guo-quality-all absolute bottom-full left-[50%] w-[200%] -translate-x-[50%] rounded-t-sm bg-gray-900/50 p-1 leading-none opacity-0 transition-all duration-300 group-hover/quality:opacity-100"
           >
             <div
-              @pointerdown="toggleQuality(item as Quality)"
-              class="box-bo my-1 w-full cursor-pointer py-1 text-center hover:bg-gray-50/10"
               v-for="item in qualityList"
               :key="item.label"
-              :class="{ 'text-violet-500': currentQuality.label == item.label }"
+              class="box-bo my-1 w-full cursor-pointer py-1 text-center hover:bg-gray-50/10"
+              :class="{
+                'text-violet-500': currentQuality.label === item.label,
+              }"
+              @pointerdown="toggleQuality(item as Quality)"
             >
               {{ item.label }}
             </div>
@@ -646,8 +642,8 @@ function changeVideo(index: Ref<number>) {
               size="20"
             />
             <Icon
-              size="20"
               v-else
+              size="20"
               name="solar:subtitles-linear"
               style="color: #f3f4f6"
             />
@@ -663,16 +659,16 @@ function changeVideo(index: Ref<number>) {
                 class="relative ml-2 inline-flex cursor-pointer items-center"
               >
                 <input
+                  id="switch"
                   type="checkbox"
                   :value="doubleSubtitle"
-                  @input="toggleDoubleSubtitle"
-                  id="switch"
                   class="peer sr-only"
+                  @input="toggleDoubleSubtitle"
                 />
                 <label
                   for="switch"
                   class="before:top-0.25 before:left-0.25 inline-flex h-3 w-6 items-center justify-between rounded-full bg-gray-200 before:absolute before:h-2.5 before:w-2.5 before:rounded-full before:border before:border-gray-300 before:bg-white before:transition-all peer-checked:bg-blue-600 peer-checked:before:translate-x-3 peer-checked:before:border-transparent peer-checked:before:bg-white peer-focus:before:outline-none"
-                ></label>
+                />
               </label>
             </div>
             <div
@@ -699,9 +695,9 @@ function changeVideo(index: Ref<number>) {
                     {{ '主字幕' }}
                   </div>
                   <div
-                    class="my-1 w-full py-1"
                     v-for="item in currentVideo.subtitles"
                     :key="item.lang"
+                    class="my-1 w-full py-1"
                     :class="{
                       'text-violet-500': item.lang === primarySubtitle?.lang,
                     }"
@@ -718,11 +714,13 @@ function changeVideo(index: Ref<number>) {
                   leave-to-class="opacity-0 translate-x-4"
                 >
                   <div v-show="doubleSubtitle" class="w-auto">
-                    <div class="my-1 py-1 text-[0.75em]">{{ '副字幕' }}</div>
+                    <div class="my-1 py-1 text-[0.75em]">
+                      {{ '副字幕' }}
+                    </div>
                     <div
-                      class="my-1 w-full py-1"
                       v-for="item in currentVideo.subtitles"
                       :key="item.lang"
+                      class="my-1 w-full py-1"
                       :class="{
                         'text-violet-500':
                           item.lang === secondarySubtitle?.lang,
@@ -742,28 +740,28 @@ function changeVideo(index: Ref<number>) {
           @pointerdown.stop="togglePictureInPicture"
         >
           <Icon
-            size="20"
             v-if="!isPictureInPicture"
+            size="20"
             name="ri:picture-in-picture-2-fill"
             style="color: #f3f4f6"
           />
           <Icon
-            size="20"
             v-else
+            size="20"
             name="ri:picture-in-picture-exit-fill"
             style="color: #f3f4f6"
           />
         </div>
         <div class="guo-fullscreen" @pointerdown.stop="togglefullScrren">
           <Icon
-            size="20"
             v-if="!isFullscreen"
+            size="20"
             name="ri:fullscreen-fill"
             style="color: #f3f4f6"
           />
           <Icon
-            size="20"
             v-else
+            size="20"
             name="ri:fullscreen-exit-fill"
             style="color: #f3f4f6"
           />
@@ -834,7 +832,7 @@ function changeVideo(index: Ref<number>) {
 }
 
 .guo-volume-bar {
-  -webkit-appearance: none;
+  /* -webkit-appearance: none; */
   /* 清除默认样式 */
   /* background: transparent; */
   /* 清除默认背景 */
