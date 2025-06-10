@@ -45,7 +45,7 @@ const currentVideo = ref(videoList[index.value]) as Ref<VideoInfo>;
 
 let clickTimer: NodeJS.Timeout | null = null;
 
-const playOrPause = (e: MouseEvent) => {
+const playOrPause = (e: PointerEvent) => {
   if (e.detail < 2)
     clickTimer = setTimeout(() => {
       if (media.value) {
@@ -71,13 +71,48 @@ const playerRef = useTemplateRef<HTMLDivElement>('guoPlayer');
 
 const progressRef = useTemplateRef<HTMLDivElement>('progressRef');
 
-function changeTime(event: MouseEvent) {
+const thumbRef = useTemplateRef<HTMLDivElement>('thumbRef');
+
+let isMove = false;
+
+function onBarPointStart(event: PointerEvent) {
+  event.preventDefault();
+  isMove = true;
+  thumbRef.value!.setPointerCapture(event.pointerId);
+}
+
+function onBarPointMove(event: PointerEvent) {
+  if (!isMove) return;
+  let newLeft = event.clientX - progressRef.value!.getBoundingClientRect().left;
+  if (newLeft < 0) {
+    newLeft = 0;
+  }
+  let rightEdge = progressRef.value!.offsetWidth - thumbRef.value!.offsetWidth;
+  if (newLeft > rightEdge) {
+    newLeft = rightEdge;
+  }
+  const percentage = newLeft / progressRef.value!.offsetWidth;
+  thumbRef.value!.style.left = percentage * 100 + '%';
+}
+
+function onBarPointEnd(event: PointerEvent) {
+  isMove = false;
+  if (media.value) {
+    const percentage = Number(thumbRef.value!.style.left.split('%')[0]) / 100;
+    media.value.timeChange(percentage * media.value.state.duration); // 根据百分比计算新的时间
+  }
+}
+
+function changeTime(event: PointerEvent) {
+  event.preventDefault();
   if (media.value) {
     const target = event.target as HTMLDivElement;
     const rect = target.getBoundingClientRect();
     const x = event.clientX - rect.left; // 鼠标点击位置相对于进度条的左边距
     const percentage = x / progressRef.value!.offsetWidth; // 计算点击位置的百分比
     media.value.timeChange(percentage * media.value.state.duration); // 根据百分比计算新的时间
+    thumbRef.value!.style.left = percentage * 100 + '%';
+    console.log(x, rect);
   }
 }
 
@@ -136,6 +171,12 @@ const currentTime = computed(() => {
   } else {
     return '00:00';
   }
+});
+
+watchEffect(() => {
+  if (media.value)
+    thumbRef.value!.style.left =
+      (media.value.state.currentTime / media.value.state.duration) * 100 + '%';
 });
 
 const duration = computed(() => {
@@ -213,22 +254,30 @@ function adjustFontSize() {
   text.value.style.fontSize = newSize + 'px';
 }
 
-async function toggleSubtitlesVisible(isShow: boolean) {
+async function toggleSubtitlesVisible(
+  isShow: boolean,
+  type: string = 'primary',
+) {
   isShowSubtitles.value = isShow;
   if (isShowSubtitles.value) {
-    if (currentVideo.value.subtitles[0]) {
-      await getLyric(
-        currentVideo.value.subtitles[0].lang,
-        currentVideo.value.name,
-      );
-      primarySubtitle.value = subtitleList[0] ?? null;
+    toggleSubtitles(currentVideo.value.subtitles[0]!, 'primary');
+    if (doubleSubtitle.value) {
+      toggleSubtitles(currentVideo.value.subtitles[1]!, 'secondary');
     }
+  }
+}
+
+function toggleDoubleSubtitle() {
+  doubleSubtitle.value = !doubleSubtitle.value;
+  if (doubleSubtitle.value) {
+    toggleSubtitles(currentVideo.value.subtitles[1]!, 'secondary');
   }
 }
 
 async function toggleSubtitles(item: VideoSubtitle, type: string) {
   await getLyric(item.lang, currentVideo.value.name);
   let lyricObj = subtitleList.find((lyric) => lyric.lang == item.lang) ?? null;
+  console.log(lyricObj, subtitleList);
   if (type == 'primary') {
     primarySubtitle.value = lyricObj;
   } else {
@@ -290,6 +339,7 @@ function forward() {
 }
 
 function changeVideo(index: Ref<number>) {
+  thumbRef.value!.style.left = '0%';
   subtitleList = [];
   primarySubtitle.value = null;
   secondarySubtitle.value = null;
@@ -302,8 +352,10 @@ function changeVideo(index: Ref<number>) {
       media.value.state.paused = true;
     }
   }
-
-  toggleSubtitlesVisible(isShowSubtitles.value);
+  if (currentVideo.value.subtitles.length < 2) {
+    doubleSubtitle.value = false;
+  }
+  toggleSubtitlesVisible(false);
 }
 </script>
 
@@ -406,42 +458,70 @@ function changeVideo(index: Ref<number>) {
       <div
         ref="subtitlesRef"
         v-if="isShowSubtitles"
-        class="guo-subtitles m-auto w-fit text-center text-gray-200"
+        class="guo-subtitles m-auto mb-2 w-fit text-center text-gray-200"
       >
         <div class="guo-subtitles-text">
           <div class="guo-subtitles-text-content">
-            <div
-              v-if="
-                useCurrentLyric(
-                  primarySubtitle?.body ?? [],
-                  media?.state.currentTime ?? 0,
-                )
-              "
-              class="guo-subtitles-text-content-text my-[0.25em] rounded-sm bg-gray-900/60 px-[0.5em] py-[0.5em]"
+            <Transition
+              enter-active-class="transition-all duration-400 ease-in-out"
+              leave-active-class="transition-all duration-400 ease-in-out"
+              enter-from-class="opacity-0"
+              leave-to-class="opacity-0"
+              mode="out-in"
             >
-              {{
-                useCurrentLyric(
-                  primarySubtitle?.body ?? [],
-                  media?.state.currentTime ?? 0,
-                )
-              }}
-            </div>
-            <div
-              v-if="
-                useCurrentLyric(
-                  secondarySubtitle?.body ?? [],
-                  media?.state.currentTime ?? 0,
-                )
-              "
-              class="guo-subtitles-text-content-text my-[0.25em] rounded-sm bg-gray-900/60 px-[0.5em] py-[0.5em]"
+              <div
+                v-if="
+                  useCurrentLyric(
+                    primarySubtitle?.body ?? [],
+                    media?.state.currentTime ?? 0,
+                  )
+                "
+                :key="
+                  useCurrentLyric(
+                    primarySubtitle?.body ?? [],
+                    media?.state.currentTime ?? 0,
+                  )
+                "
+                class="guo-subtitles-text-content-text my-[0.25em] rounded-sm bg-gray-900/60 px-[0.5em] py-[0.5em]"
+              >
+                {{
+                  useCurrentLyric(
+                    primarySubtitle?.body ?? [],
+                    media?.state.currentTime ?? 0,
+                  )
+                }}
+              </div>
+            </Transition>
+            <Transition
+              enter-active-class="transition-all duration-400 ease-in-out"
+              leave-active-class="transition-all duration-400 ease-in-out"
+              enter-from-class="opacity-0"
+              leave-to-class="opacity-0"
+              mode="out-in"
             >
-              {{
-                useCurrentLyric(
-                  secondarySubtitle?.body ?? [],
-                  media?.state.currentTime ?? 0,
-                )
-              }}
-            </div>
+              <div
+                v-if="
+                  useCurrentLyric(
+                    secondarySubtitle?.body ?? [],
+                    media?.state.currentTime ?? 0,
+                  )
+                "
+                :key="
+                  useCurrentLyric(
+                    secondarySubtitle?.body ?? [],
+                    media?.state.currentTime ?? 0,
+                  )
+                "
+                class="guo-subtitles-text-content-text my-[0.25em] rounded-sm bg-gray-900/60 px-[0.5em] py-[0.5em]"
+              >
+                {{
+                  useCurrentLyric(
+                    secondarySubtitle?.body ?? [],
+                    media?.state.currentTime ?? 0,
+                  )
+                }}
+              </div>
+            </Transition>
           </div>
         </div>
       </div>
@@ -475,19 +555,28 @@ function changeVideo(index: Ref<number>) {
         <div class="guo-progress flex flex-auto items-center">
           <div
             ref="progressRef"
-            class="guo-progress-bar relative h-1 w-full cursor-pointer overflow-hidden rounded-full bg-gray-400/50"
-            @pointerdown.capture.stop="changeTime"
+            class="guo-progress-bar relative h-1 w-full cursor-pointer rounded-full bg-gray-400/50"
+            @pointerdown.stop="onBarPointStart"
+            @pointermove.stop="onBarPointMove"
+            @pointerup.stop="onBarPointEnd"
           >
+            <div
+              ref="thumbRef"
+              :style="{ left: 0 }"
+              class="guo-progress-thumb absolute top-[50%] z-30 h-2 w-2 -translate-y-[50%] rounded-sm bg-violet-500"
+            ></div>
+            <div
+              class="guo-progress-bar-buffer absolute top-0 z-20 h-full w-full rounded-full bg-indigo-300 bg-transparent"
+              @pointerdown="changeTime"
+            ></div>
             <div
               class="guo-progress-bar-current relative z-10 h-full rounded-full bg-indigo-500 shadow-2xl shadow-indigo-500/50"
               :style="{ width: playPercentage * 100 + '%' }"
             ></div>
             <div
-              class="guo-progress-bar-buffer z-1 absolute top-0 h-full rounded-full bg-indigo-300"
+              class="guo-progress-bar-buffer absolute top-0 h-full rounded-full bg-indigo-300"
               :style="{ width: bufferPercentage * 100 + '%' }"
             ></div>
-            <!-- <input class="guo-progress-bar-current w-full" type="range" />
-              <input class="guo-progress-bar-buffer absolute w-full" type="range" /> -->
           </div>
         </div>
         <div class="guo-time">{{ duration }}</div>
@@ -542,7 +631,7 @@ function changeVideo(index: Ref<number>) {
           </div>
         </div>
         <div
-          v-if="subtitlesButton"
+          v-if="subtitlesButton && currentVideo.subtitles?.length > 0"
           class="guo-subtitles group/subtitles relative h-8 select-none leading-8"
         >
           <div
@@ -568,7 +657,7 @@ function changeVideo(index: Ref<number>) {
             absolute
             bottom-full
           >
-            <div class="mt-2 w-full">
+            <div v-if="currentVideo.subtitles.length >= 2" class="mt-2 w-full">
               <span>双语字幕</span>
               <label
                 class="relative ml-2 inline-flex cursor-pointer items-center"
@@ -576,7 +665,7 @@ function changeVideo(index: Ref<number>) {
                 <input
                   type="checkbox"
                   :value="doubleSubtitle"
-                  @input="doubleSubtitle = !doubleSubtitle"
+                  @input="toggleDoubleSubtitle"
                   id="switch"
                   class="peer sr-only"
                 />
@@ -587,8 +676,12 @@ function changeVideo(index: Ref<number>) {
               </label>
             </div>
             <div
-              class="h-auto w-24 text-left transition-all duration-500 ease-in-out"
-              :class="{ 'w-48': doubleSubtitle }"
+              class="h-auto text-left transition-all duration-500 ease-in-out"
+              :class="{
+                'w-48': doubleSubtitle,
+                'w-24': !doubleSubtitle && currentVideo.subtitles.length >= 2,
+                'w-14': currentVideo.subtitles.length < 2,
+              }"
             >
               <div
                 class="w-42 mx-3 flex justify-between"
@@ -600,6 +693,7 @@ function changeVideo(index: Ref<number>) {
                     :class="{
                       visible: doubleSubtitle,
                       invisible: !doubleSubtitle,
+                      hidden: currentVideo.subtitles.length < 2,
                     }"
                   >
                     {{ '主字幕' }}
@@ -664,26 +758,15 @@ function changeVideo(index: Ref<number>) {
           <Icon
             size="20"
             v-if="!isFullscreen"
-            name="ri:fullscreen-line"
+            name="ri:fullscreen-fill"
             style="color: #f3f4f6"
           />
-          <!-- <Icon
+          <Icon
             size="20"
             v-else
-            name="ri:fullscreen-exit-line"
+            name="ri:fullscreen-exit-fill"
             style="color: #f3f4f6"
-          /> -->
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-          >
-            <path
-              fill="currentColor"
-              d="M18 7h4v2h-6V3h2zM8 9H2V7h4V3h2zm10 8v4h-2v-6h6v2zM8 15v6H6v-4H2v-2z"
-            />
-          </svg>
+          />
         </div>
       </div>
     </div>
