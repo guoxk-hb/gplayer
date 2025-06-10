@@ -1,3 +1,6 @@
+import type { Representation } from 'dashjs'
+import type { Level } from 'hls.js'
+
 interface Lyric {
   to: number
   from: number
@@ -6,17 +9,16 @@ interface Lyric {
 }
 
 export interface Subtitle {
-  fontSize: string,
-  fontColor: string,
-  backgroundAlpha: string,
-  backgroundColor: string,
-  Stroke: string,
-  lang: string,
-  body: Lyric[],
-  type: "subtitle",
-  version: string,
+  fontSize: string
+  fontColor: string
+  backgroundAlpha: string
+  backgroundColor: string
+  Stroke: string
+  lang: string
+  body: Lyric[]
+  type: 'subtitle'
+  version: string
 }
-
 
 export interface VideoSubtitle {
   lang: string
@@ -30,9 +32,14 @@ export interface VideoInfo {
   subtitles: VideoSubtitle[]
 }
 
-import type { Level } from "hls.js"
-
 export interface Quality {
   label: string
-  representation: dashjs.Representation | Level
+  representation?: Representation | Level
+}
+
+export interface VideoOptions {
+  autoplay: boolean
+  muted: boolean
+  loop: boolean
+  preload: string
 }

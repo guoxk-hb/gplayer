@@ -1,8 +1,8 @@
+import type { Subtitle } from '~/types'
 import { readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
-import process from 'node:process'
 
-import type { Subtitle, } from '~/types';
+import process from 'node:process'
 
 let jsonData: Subtitle | null = null
 export default defineEventHandler((event) => {

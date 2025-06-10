@@ -6,6 +6,6 @@ enum LANGUAGE {
   // ITALIAN = "it",
   // RUSSIAN = "ru",
   // JAPANESE = "ja",
-  CHINESE = "cmn",
-  KOREAN = "kor"
+  CHINESE = 'cmn',
+  KOREAN = 'kor',
 }
