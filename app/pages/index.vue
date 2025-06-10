@@ -120,10 +120,10 @@ const videoList: VideoInfo[] = [
         lang: 'cmn',
         label: '中文',
       },
-      {
-        lang: 'kor',
-        label: '韩文',
-      },
+      // {
+      //   lang: 'kor',
+      //   label: '韩文',
+      // },
     ],
   },
 ];
