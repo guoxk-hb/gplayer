@@ -399,11 +399,15 @@ export class GuoPlayer {
       const Hls = useNuxtApp().$Hls
       let player = this.state.player as Hls
       const targetLevelIndex = player.levels.findIndex((level) => level.height === item.representation.height);
-      player.nextLevel = targetLevelIndex;
-      // player.currentLevel = targetLevelIndex;
+      // player.nextLevel = targetLevelIndex;
+      this.video.pause()
+      player.currentLevel = targetLevelIndex;
+      const currentTime = this.video.currentTime
       player.once(Hls.Events.LEVEL_SWITCHED, () => {
         // 你可以在这里执行切换完成后的逻辑
         // console.log("切换完成", player.currentLevel)
+        this.video.currentTime = currentTime; // 定位到原时间点
+        this.video.play()
         // this.state.currentQuality = item;
       });
     }
