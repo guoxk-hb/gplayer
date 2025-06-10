@@ -7,4 +7,7 @@ export default antfu({
     html: 'prettier',
   },
   pnpm: true,
+  typescript: {
+    tsconfigPath: 'tsconfig.json',
+  },
 }).append(nuxt());

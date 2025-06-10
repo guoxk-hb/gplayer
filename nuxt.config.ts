@@ -13,13 +13,13 @@ export default defineNuxtConfig({
   plugins: [
     { src: '~/plugins/hls', mode: 'client' },
     { src: '~/plugins/flv', mode: 'client' },
-    { src: '~/plugins/dash', mode: 'client' }
+    { src: '~/plugins/dash', mode: 'client' },
   ],
   future: {
     compatibilityVersion: 4,
   },
   icon: {
     mode: 'css',
-    cssLayer: 'base'
+    cssLayer: 'base',
   },
 })

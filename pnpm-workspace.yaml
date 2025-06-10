@@ -1,3 +1,5 @@
+overrides:
+  vite: npm:rolldown-vite@latest
 catalog:
   '@antfu/eslint-config': ^4.14.1
   '@commitlint/cli': ^19.8.1
@@ -25,5 +27,3 @@ catalog:
   prettier-plugin-tailwindcss: ^0.6.12
   vue: ^3.5.16
   vue-router: ^4.5.1
-overrides:
-  vite: npm:rolldown-vite@latest
