@@ -12,7 +12,7 @@ export default defineNuxtConfig({
       ],
       meta: [
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-        { name: 'description', content: 'Web视频播放器Demo，支持mpd、m3u8、flv及Mp4格式' },
+        { name: 'description', content: '通过 Vue + Nuxt 编写的Web视频播放器，支持mpd、m3u8、flv及Mp4格式。' },
         { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' },
       ],
     },
@@ -24,7 +24,6 @@ export default defineNuxtConfig({
     '@nuxt/image',
     '@vueuse/nuxt',
     '@nuxtjs/tailwindcss',
-    '@nuxtjs/robots',
   ],
   plugins: [
     { src: '~/plugins/hls', mode: 'client' },
