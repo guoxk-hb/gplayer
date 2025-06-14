@@ -1,5 +1,6 @@
- import type { VideoInfo } from '~/types';
- let videoList:VideoInfo[] = [ 
+import type { VideoInfo } from '~/types'
+
+const videoList: VideoInfo[] = [
   {
     name: '3',
     url: '/video/3/output.mpd',
@@ -15,7 +16,7 @@
       },
     ],
   },
-    {
+  {
     name: '2',
     url: '/video/2/output.mpd',
     type: 'mpd',
@@ -61,21 +62,22 @@
     ],
   },
   {
-  name: '5',
-  url: '/video/5/output.m3u8',
-  type: 'm3u8',
-  subtitles: [
-    {
-      lang: 'cmn',
-      label: '中文',
-    },
-    {
-      lang: 'kor',
-      label: '韩文',
-    },
-  ],
-}]
-import { join, resolve } from 'node:path'
+    name: '5',
+    url: '/video/5/output.m3u8',
+    type: 'm3u8',
+    subtitles: [
+      {
+        lang: 'cmn',
+        label: '中文',
+      },
+      {
+        lang: 'kor',
+        label: '韩文',
+      },
+    ],
+  },
+]
+
 export default defineEventHandler((event) => {
   try {
     return videoList

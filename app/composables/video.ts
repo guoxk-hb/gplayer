@@ -1,8 +1,7 @@
-
-import type { Level } from 'hls.js';
-import type { Quality, VideoOptions } from '~/types';
-import type Hls from 'hls.js';
-import type { Representation, MediaPlayerClass, StreamInitializedEvent } from 'dashjs'
+import type { MediaPlayerClass, Representation, StreamInitializedEvent } from 'dashjs'
+import type { Level } from 'hls.js'
+import type Hls from 'hls.js'
+import type { Quality, VideoOptions } from '~/types'
 
 type PlayerType = MediaPlayerClass | null | Hls
 
@@ -19,15 +18,14 @@ interface videoState {
   error: boolean
   representation?: Representation[] | Level[]
   currentRepresentation?: Representation | null | Level
-  qualityList: Array<Quality>,
+  qualityList: Array<Quality>
   currentQuality: Quality | null
   player: PlayerType
   type: string | null
   src: string
   options: VideoOptions
-  loaded:boolean
+  loaded: boolean
 }
-
 
 enum QUALITY {
   '自动' = -1,
@@ -56,15 +54,16 @@ export class GuoPlayer {
       player: null,
       type: null,
       src: '',
-      loaded:false,
+      loaded: false,
       options: {
         autoplay: false,
         muted: false,
         loop: false,
-        preload: 'auto'
-      }
-    }
+        preload: 'auto',
+      },
+    },
   )
+
   constructor(video: HTMLVideoElement, src: string, type: string, options: VideoOptions) {
     this.video = video
     this.state.src = src
@@ -91,12 +90,14 @@ export class GuoPlayer {
     }
     this.initVideoEvent()
   }
+
   private initVideoEvent() {
     this.video.addEventListener('canplay', () => {
-      if(this.state.options.autoplay === false){
+      if (this.state.options.autoplay === false) {
         this.state.loaded = true
         this.state.paused = true
-      }else{
+      }
+      else {
         this.state.paused = false
       }
       // console.log('canplay')
@@ -107,7 +108,7 @@ export class GuoPlayer {
       this.state.canplay = false
       this.state.paused = true
     })
-    this.video.addEventListener('timeupdate', (e) => {
+    this.video.addEventListener('timeupdate', () => {
       this.state.currentTime = this.video.currentTime * 1000
       this.state.playPercentage = this.state.currentTime / this.state.duration
     })
@@ -129,7 +130,7 @@ export class GuoPlayer {
       this.state.paused = true
     })
     this.video.addEventListener('progress', () => {
-      this.state.bufferPercentage = this.video.buffered.length ? this.video.buffered.end(this.video.buffered.length - 1) / this.video.duration : 0;
+      this.state.bufferPercentage = this.video.buffered.length ? this.video.buffered.end(this.video.buffered.length - 1) / this.video.duration : 0
     })
     this.video.addEventListener('loadedmetadata', () => {
       this.state.duration = this.video.duration * 1000
@@ -138,42 +139,41 @@ export class GuoPlayer {
       this.state.error = true
     })
   }
+
   private hls(src: string) {
     const Hls = useNuxtApp().$Hls
     if (Hls.isSupported()) {
       const hls = this.state.player = new Hls(
         {
-          startLevel: -1
-        }
-      );
+          startLevel: -1,
+        },
+      )
       hls.loadSource(src)
-      hls.attachMedia(this.video);
+      hls.attachMedia(this.video)
       hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
-
-        hls.once(Hls.Events.LEVEL_SWITCHED, (_, currentData) => {
+        hls.once(Hls.Events.LEVEL_SWITCHED, async (_, currentData) => {
           // 你可以在这里执行切换完成后的逻辑
           const currentLevel = currentData.level
-          const levels = data.levels;
+          const levels = data.levels
           levels.forEach((item, index) => {
             if (QUALITY[item.height]) {
-              let obj: Quality = {
+              const obj: Quality = {
                 label: QUALITY[item.height] as string,
-                representation: item
+                representation: item,
               }
               this.state.qualityList.push(obj)
               if (currentLevel === index) {
                 this.state.currentQuality = obj
                 this.state.currentRepresentation = item
               }
-
             }
-          });
+          })
           // this.state.qualityList.push({
           //   label: QUALITY[-1] as string
           // })
           this.state.qualityList = this.state.qualityList.sort((a, b) => {
-            let aKey = a.label as keyof typeof QUALITY
-            let bKey = b.label as keyof typeof QUALITY
+            const aKey = a.label as keyof typeof QUALITY
+            const bKey = b.label as keyof typeof QUALITY
             return QUALITY[bKey] - QUALITY[aKey]
           })
           if (currentLevel === -1) {
@@ -181,35 +181,37 @@ export class GuoPlayer {
             this.state.currentRepresentation = null
           }
           if (this.state.options.autoplay) {
-            this.video.play()
+            await this.video.play()
           }
-        });
-      });
-    } else if (this.video.canPlayType('application/vnd.apple.mpegurl')) {
+        })
+      })
+    }
+    else if (this.video.canPlayType('application/vnd.apple.mpegurl')) {
       this.video.src = src
       if (this.state.options.autoplay) {
-        this.video.play()
+        await this.video.play()
       }
     }
   }
+
   private dash(src: string) {
-    let dash = useNuxtApp().$dash
-    let video = this.video
+    const dash = useNuxtApp().$dash
+    const video = this.video
     const player = this.state.player = dash
       .MediaPlayer()
       .create()
     player.initialize(
       video,
       src,
-      this.state.options.autoplay // 自动播放
+      this.state.options.autoplay, // 自动播放
     )
     player.updateSettings({
       streaming: {
         abr: {
           autoSwitchBitrate: {
             video: false, // 自动切换视频清晰度
-            audio: false // 自动切换音频清晰度
-          }
+            audio: false, // 自动切换音频清晰度
+          },
         },
         buffer: {
           flushBufferAtTrackSwitch: true,
@@ -222,19 +224,19 @@ export class GuoPlayer {
 
           // Otherwise, track switching will be effective only once after previous buffered track is fully consumed.
           // 否则，轨道切换只有在之前的缓冲轨道完全被消耗后才会生效一次。
-          fastSwitchEnabled: true,  // 开启快速切换 segment（重点！）
+          fastSwitchEnabled: true, // 开启快速切换 segment（重点！）
         },
-      }
+      },
     })
-    const getQuality = (e: StreamInitializedEvent) => {
-      this.state.representation = player!.getRepresentationsByType('video');
-      this.state.currentRepresentation = player!.getCurrentRepresentationForType('video');
+    const getQuality = () => {
+      this.state.representation = player.getRepresentationsByType('video')
+      this.state.currentRepresentation = player.getCurrentRepresentationForType('video')
       this.state.qualityList = []
-      for (let item of this.state.representation!) {
+      for (const item of this.state.representation) {
         if (QUALITY[item.height]) {
-          let obj: Quality = {
+          const obj: Quality = {
             label: QUALITY[item.height] as string,
-            representation: item
+            representation: item,
           }
           this.state.qualityList.push(obj)
           if (item.id === this.state.currentRepresentation?.id) {
@@ -246,8 +248,8 @@ export class GuoPlayer {
       //   label: QUALITY[-1] as string
       // })
       this.state.qualityList = this.state.qualityList.sort((a, b) => {
-        let aKey = a.label as keyof typeof QUALITY
-        let bKey = b.label as keyof typeof QUALITY
+        const aKey = a.label as keyof typeof QUALITY
+        const bKey = b.label as keyof typeof QUALITY
         return QUALITY[bKey] - QUALITY[aKey]
       })
       // player.off(dash.MediaPlayer.events.STREAM_INITIALIZED, getQuality)
@@ -262,38 +264,40 @@ export class GuoPlayer {
     //   console.log('清晰度切换请求')
     // })
   }
-  private flv(src: string) {
-    let flvjs = useNuxtApp().$flvjs
+
+  private async flv(src: string) {
+    const flvjs = useNuxtApp().$flvjs
     if (flvjs.isSupported()) {
-      var videoElement = this.video
-      var flvPlayer = flvjs.createPlayer({
+      const videoElement = this.video
+      const flvPlayer = flvjs.createPlayer({
         type: 'flv',
-        url: src
-      });
-      flvPlayer.attachMediaElement(videoElement);
-      flvPlayer.load();
+        url: src,
+      })
+      flvPlayer.attachMediaElement(videoElement)
+      flvPlayer.load()
       if (this.state.options.autoplay) {
-        flvPlayer.play();
+        await flvPlayer.play()
       }
     }
   }
+
   private mp4(src: string) {
     this.video.src = src
     if (this.state.options.autoplay) {
       this.video.autoplay = true
     }
   }
+
   src(newSrc: string, type: string) {
     this.state.canplay = false
     this.state.qualityList = []
     this.state.currentQuality = null
     if (type !== this.state.type) {
       if (this.state.player) {
-        if (this.state.type == 'mpd') {
-          (this.state.player as MediaPlayerClass).reset();
+        if (this.state.type === 'mpd') {
+          (this.state.player as MediaPlayerClass).reset()
         }
         this.state.player = null
-
       }
       this.state.type = type
       if (type == 'mpd') {
@@ -301,24 +305,28 @@ export class GuoPlayer {
           (this.state.player as Hls)?.destroy()
         }
         this.dash(newSrc)
-      } else if (type == 'm3u8') {
+      }
+      else if (type === 'm3u8') {
         if (this.state.player) {
           (this.state.player as MediaPlayerClass).reset()
         }
         this.hls(newSrc)
       }
-    } else {
-      if (type == 'mpd') {
+    }
+    else {
+      if (type === 'mpd') {
         (this.state.player as MediaPlayerClass)?.attachSource(newSrc)
-      } else if (type == 'm3u8') {
+      }
+      else if (type === 'm3u8') {
         this.state.player?.destroy()
         this.hls(newSrc)
       }
     }
-    if (type == 'mp4') {
+    if (type === 'mp4') {
       this.mp4(newSrc)
     }
   }
+
   play() {
     this.state.loaded = false
     const playPromse = this.video.play()
@@ -330,6 +338,7 @@ export class GuoPlayer {
     }
     this.state.paused = false
   }
+
   pause() {
     this.video.pause()
     this.state.paused = true
@@ -348,11 +357,11 @@ export class GuoPlayer {
   toggleMuted() {
     if (this.video.muted) {
       this.state.options.muted = this.video.muted = false
-    } else {
+    }
+    else {
       this.state.options.muted = this.video.muted = true
     }
   }
-
 
   timeChange(time: number) {
     this.video.currentTime = time / 1000 // 转换为秒
@@ -364,7 +373,7 @@ export class GuoPlayer {
   }
 
   pictureInPicture() {
-    if ("documentPictureInPicture" in window) {
+    if ('documentPictureInPicture' in window) {
       this.video.requestPictureInPicture().then(() => {
         this.state.isPictureInPicture = true
         const cb = () => {
@@ -373,7 +382,7 @@ export class GuoPlayer {
           this.video.removeEventListener('leavepictureinpicture', cb)
         }
         // 监听退出画中画模式事件
-        this.video.addEventListener('leavepictureinpicture', cb);
+        this.video.addEventListener('leavepictureinpicture', cb)
       }).catch((err) => {
         console.error(`尝试切换到画中画模式时发生错误：${err.message}（${err.name}）`)
       })
@@ -386,7 +395,7 @@ export class GuoPlayer {
         this.state.isPictureInPicture = false
       }).catch((err) => {
         console.error(`尝试退出画中画模式时发生错误：${err.message}（${err.name}）`)
-      });
+      })
     }
   }
 
@@ -399,62 +408,67 @@ export class GuoPlayer {
             this.state.isFullscreen = false
             document.removeEventListener('fullscreenchange', cb)
           }
-        };
-        document.addEventListener('fullscreenchange', cb);
+        }
+        document.addEventListener('fullscreenchange', cb)
       }).catch((err) => {
         console.error(`尝试切换到全屏模式时发生错误：${err.message}（${err.name}）`)
       })
     }
   }
+
   exitFullScreen() {
     if (document.exitFullscreen && document.fullscreenElement) {
       document.exitFullscreen().then(() => {
         this.state.isFullscreen = false
       }).catch((err) => {
         console.error(`尝试退出全屏模式时发生错误：${err.message}（${err.name}）`)
-      });
+      })
     }
   }
+
   async toggleQuality(item: Quality) {
-    if (!this.state.representation) return
+    if (!this.state.representation)
+      return
     if (this.state.type === 'm3u8') {
       const Hls = useNuxtApp().$Hls
-      let player = this.state.player as Hls
+      const player = this.state.player as Hls
       let targetLevelIndex = null
       if (QUALITY[item.label as keyof typeof QUALITY] === -1) {
         targetLevelIndex = -1
-      } else {
-        targetLevelIndex = player.levels.findIndex((level) => level.height === item.representation!.height);
+      }
+      else {
+        targetLevelIndex = player.levels.findIndex(level => level.height === item.representation!.height)
       }
       this.video.pause()
       this.state.canplay = false
-      player.currentLevel = targetLevelIndex;
+      player.currentLevel = targetLevelIndex
       const currentTime = this.video.currentTime
-      player.once(Hls.Events.LEVEL_SWITCHED, () => {
+      player.once(Hls.Events.LEVEL_SWITCHED, async() => {
         // 你可以在这里执行切换完成后的逻辑
-        this.video.currentTime = currentTime; // 定位到原时间点
-        this.video.play()
+        this.video.currentTime = currentTime // 定位到原时间点
+        await this.video.play()
         this.state.canplay = true
-      });
+      })
     }
     if (this.state.type === 'mpd') {
-      let dash = useNuxtApp().$dash
-      let player = this.state.player as MediaPlayerClass
-      player.setRepresentationForTypeByIndex('video', (item.representation as Representation).index, true);
+      const dash = useNuxtApp().$dash
+      const player = this.state.player as MediaPlayerClass
+      player.setRepresentationForTypeByIndex('video', (item.representation as Representation).index, true)
       player.on(dash.MediaPlayer.events.QUALITY_CHANGE_RENDERED, () => {
         // console.log('清晰度切换完成')
       })
     }
-    this.state.currentQuality = item;
+    this.state.currentQuality = item
   }
+
   screenshot() {
     const canvas: HTMLCanvasElement = document.createElement('canvas')
-    canvas.width = this.video.videoWidth;
+    canvas.width = this.video.videoWidth
     canvas.height = this.video.videoHeight
     const ctx = canvas.getContext('2d')
     ctx!.drawImage(this.video, 0, 0, canvas.width, canvas.height)
-    const fileName = this.video.currentTime + '.png'
-    canvas.toBlob(blob => {
+    const fileName = `${this.video.currentTime}.png`
+    canvas.toBlob((blob) => {
       const url = URL.createObjectURL(blob as Blob)
       const a = document.createElement('a')
       a.href = url
@@ -466,6 +480,7 @@ export class GuoPlayer {
       URL.revokeObjectURL(url)
     }, 'image/png')
   }
+
   destroy() {
     // console.log("销毁了")
   }

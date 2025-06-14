@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import type { Representation } from 'dashjs';
-import type { Subtitle, VideoInfo, VideoSubtitle } from '~/types';
 import type { UseMouseSourceType } from '@vueuse/core'
+import type { Representation } from 'dashjs'
 import type { ShallowRef } from 'vue'
+import type { Subtitle, VideoInfo, VideoSubtitle } from '~/types'
+
 const {
   videoList = [],
   conterols = true,
@@ -13,72 +14,72 @@ const {
   preload = 'auto',
   volume: PropVolume = 1,
   subtitlesButton = true,
-} = defineProps<Props>();
+} = defineProps<Props>()
 
-const videoRef = useTemplateRef<HTMLVideoElement>('video');
+const videoRef = useTemplateRef<HTMLVideoElement>('video')
 
-const media: Ref<null | GuoPlayer> = ref(null);
+const media: Ref<null | GuoPlayer> = ref(null)
 
 interface Props {
-  videoList?: VideoInfo[];
-  conterols?: boolean;
-  muted?: boolean;
-  autoplay?: boolean;
-  loop?: boolean;
+  videoList?: VideoInfo[]
+  conterols?: boolean
+  muted?: boolean
+  autoplay?: boolean
+  loop?: boolean
   // fluid?: boolean;
-  volume?: number;
-  subtitlesButton?: boolean;
-  preload?: string;
+  volume?: number
+  subtitlesButton?: boolean
+  preload?: string
 }
 
-
-const index = ref(0);
-const currentVideo = ref(videoList[index.value]) as Ref<VideoInfo>;
+const index = ref(0)
+const currentVideo = ref(videoList[index.value]) as Ref<VideoInfo>
 
 function toggleQuality(item: Quality) {
   if (media.value) {
-    media.value.toggleQuality(item);
+    media.value.toggleQuality(item)
   }
 }
-
 
 const volumnIconDict = ref({
   1: 'ri:volume-up-fill',
   0.5: 'ri:volume-down-fill',
   0: 'ri:volume-mute-fill',
-});
+})
 const paused = computed(() => {
-  return media.value?.state.paused;
-});
+  return media.value?.state.paused
+})
 
 const canplay = computed(() => {
-  return media.value?.state.canplay;
-});
+  return media.value?.state.canplay
+})
 
-const loaded = computed(()=>{
-  return media.value?.state.loaded;
+const loaded = computed(() => {
+  return media.value?.state.loaded
 })
 
 const videoMuted = computed(() => {
-  return media.value?.state.options?.muted;
-});
+  return media.value?.state.options?.muted
+})
 
 const currentTime = computed(() => {
   if (media.value) {
-    return useDateFormat(media.value.state.currentTime, 'mm:ss');
-  } else {
-    return '00:00';
+    return useDateFormat(media.value.state.currentTime, 'mm:ss')
   }
-});
+  else {
+    return '00:00'
+  }
+})
 
 const duration = computed(() => {
   if (media.value) {
-    return useDateFormat(media.value.state.duration, 'mm:ss');
-  } else {
-    return '00:00';
+    return useDateFormat(media.value.state.duration, 'mm:ss')
   }
-});
-const initVolume = ref(PropVolume);
+  else {
+    return '00:00'
+  }
+})
+const initVolume = ref(PropVolume)
 
 // const volume = computed(() => {
 //   return media.value?.state.volume;
@@ -86,122 +87,125 @@ const initVolume = ref(PropVolume);
 
 const playPercentage = computed(() => {
   if (media.value) {
-    return media.value.state.playPercentage;
+    return media.value.state.playPercentage
   }
-  return 0;
-});
+  return 0
+})
 const bufferPercentage = computed(() => {
   if (media.value) {
-    return media.value.state.bufferPercentage;
+    return media.value.state.bufferPercentage
   }
-  return 0;
-});
+  return 0
+})
 
 const isFullscreen = computed(() => {
-  return media.value?.state.isFullscreen;
-});
+  return media.value?.state.isFullscreen
+})
 
 const isPictureInPicture = computed(() => {
-  return media.value?.state.isPictureInPicture;
-});
+  return media.value?.state.isPictureInPicture
+})
 
 const error = computed(() => {
-  return media.value?.state.error;
-});
+  return media.value?.state.error
+})
 
 const qualityList = computed(() => {
-  return media.value?.state.qualityList || [];
-});
+  return media.value?.state.qualityList || []
+})
 
 const currentQuality = computed(() => {
-  return media.value?.state.currentQuality;
-});
+  return media.value?.state.currentQuality
+})
 
-let clickTimer: NodeJS.Timeout | null = null;
+let clickTimer: NodeJS.Timeout | null = null
 
 function playOrPause(e: PointerEvent) {
   if (e.detail < 2) {
     clickTimer = setTimeout(() => {
       if (media.value) {
         if (paused.value) {
-          media.value.play();
-        } else {
-          media.value.pause();
+          media.value.play()
+        }
+        else {
+          media.value.pause()
         }
       }
-      clickTimer = null;
-    }, 200);
+      clickTimer = null
+    }, 200)
   } // 250ms 是一个合适的判断间隔
 }
 
 function volumeChange(event: Event) {
-  const target = event.target as HTMLInputElement;
+  const target = event.target as HTMLInputElement
   if (media.value) {
-    media.value.volumeChange(Number.parseFloat(target.value));
-    initVolume.value = Number.parseFloat(target.value);
+    media.value.volumeChange(Number.parseFloat(target.value))
+    initVolume.value = Number.parseFloat(target.value)
   }
 }
 
-const playerRef = useTemplateRef<HTMLDivElement>('guoPlayer');
+const playerRef = useTemplateRef<HTMLDivElement>('guoPlayer')
 
-const progressRef = useTemplateRef<HTMLDivElement>('progressRef');
+const progressRef = useTemplateRef<HTMLDivElement>('progressRef')
 
-const thumbRef = useTemplateRef<HTMLDivElement>('thumbRef');
+const thumbRef = useTemplateRef<HTMLDivElement>('thumbRef')
 
-let isMove = false;
+let isMove = false
 
 function onBarPointStart(event: PointerEvent) {
-  event.preventDefault();
-  isMove = true;
-  thumbRef.value!.setPointerCapture(event.pointerId);
+  event.preventDefault()
+  isMove = true
+  thumbRef.value!.setPointerCapture(event.pointerId)
 }
 
 function onBarPointMove(event: PointerEvent) {
-  if (!isMove) return;
-  let newLeft = event.clientX - progressRef.value!.getBoundingClientRect().left;
+  if (!isMove)
+    return
+  let newLeft = event.clientX - progressRef.value!.getBoundingClientRect().left
   if (newLeft < 0) {
-    newLeft = 0;
+    newLeft = 0
   }
-  const rightEdge =
-    progressRef.value!.offsetWidth - thumbRef.value!.offsetWidth;
+  const rightEdge
+    = progressRef.value!.offsetWidth - thumbRef.value!.offsetWidth
   if (newLeft > rightEdge) {
-    newLeft = rightEdge;
+    newLeft = rightEdge
   }
-  const percentage = newLeft / progressRef.value!.offsetWidth;
-  thumbRef.value!.style.left = `${percentage * 100}%`;
+  const percentage = newLeft / progressRef.value!.offsetWidth
+  thumbRef.value!.style.left = `${percentage * 100}%`
 }
 
 function onBarPointEnd() {
-  isMove = false;
+  isMove = false
   if (media.value) {
-    const percentage = Number(thumbRef.value!.style.left.split('%')[0]) / 100;
-    media.value.timeChange(percentage * media.value.state.duration); // 根据百分比计算新的时间
+    const percentage = Number(thumbRef.value!.style.left.split('%')[0]) / 100
+    media.value.timeChange(percentage * media.value.state.duration) // 根据百分比计算新的时间
   }
 }
 
 function changeTime(event: PointerEvent) {
-  event.preventDefault();
+  event.preventDefault()
   if (media.value) {
-    const target = event.target as HTMLDivElement;
-    const rect = target.getBoundingClientRect();
-    const x = event.clientX - rect.left; // 鼠标点击位置相对于进度条的左边距
-    const percentage = x / progressRef.value!.offsetWidth; // 计算点击位置的百分比
-    media.value.timeChange(percentage * media.value.state.duration); // 根据百分比计算新的时间
-    thumbRef.value!.style.left = `${percentage * 100}%`;
+    const target = event.target as HTMLDivElement
+    const rect = target.getBoundingClientRect()
+    const x = event.clientX - rect.left // 鼠标点击位置相对于进度条的左边距
+    const percentage = x / progressRef.value!.offsetWidth // 计算点击位置的百分比
+    media.value.timeChange(percentage * media.value.state.duration) // 根据百分比计算新的时间
+    thumbRef.value!.style.left = `${percentage * 100}%`
   }
 }
 
 function togglefullScrren(e: MouseEvent) {
   if (clickTimer) {
-    clearTimeout(clickTimer);
-    clickTimer = null;
+    clearTimeout(clickTimer)
+    clickTimer = null
   }
-  e.stopPropagation();
+  e.stopPropagation()
   if (media.value) {
     if (!isFullscreen.value) {
-      media.value.fullScreen(playerRef.value as HTMLDivElement);
-    } else {
-      media.value.exitFullScreen();
+      media.value.fullScreen(playerRef.value as HTMLDivElement)
+    }
+    else {
+      media.value.exitFullScreen()
     }
   }
 }
@@ -209,122 +213,126 @@ function togglefullScrren(e: MouseEvent) {
 function togglePictureInPicture() {
   if (media.value) {
     if (!isPictureInPicture.value) {
-      media.value.pictureInPicture();
-    } else {
-      media.value.exitPictureInPicture();
+      media.value.pictureInPicture()
+    }
+    else {
+      media.value.exitPictureInPicture()
     }
   }
 }
 
 interface Quality {
-  label: string;
-  representation: Representation;
+  label: string
+  representation: Representation
 }
 
-let subtitleList: Subtitle[] = [];
+let subtitleList: Subtitle[] = []
 
-const subtitlesRef = useTemplateRef<HTMLDivElement>('subtitlesRef');
+const subtitlesRef = useTemplateRef<HTMLDivElement>('subtitlesRef')
 
 function adjustFontSize() {
-  const containerWidth = playerRef.value!.clientWidth;
-  const baseSize = 10; // 基础字体大小（像素）
-  const minSize = baseSize;
-  const maxSize = baseSize * 3; // 最大字体大小为两倍基础大小
-  const factor = 0.01; // 调整因子
-  let newSize = baseSize + containerWidth * factor;
-  newSize = Math.max(minSize, Math.min(newSize, maxSize)); // 确保在最小和最大值之间
-  if (!subtitlesRef.value) return;
-  subtitlesRef.value.style.fontSize = `${newSize}px`;
+  const containerWidth = playerRef.value!.clientWidth
+  const baseSize = 10 // 基础字体大小（像素）
+  const minSize = baseSize
+  const maxSize = baseSize * 3 // 最大字体大小为两倍基础大小
+  const factor = 0.01 // 调整因子
+  let newSize = baseSize + containerWidth * factor
+  newSize = Math.max(minSize, Math.min(newSize, maxSize)) // 确保在最小和最大值之间
+  if (!subtitlesRef.value)
+    return
+  subtitlesRef.value.style.fontSize = `${newSize}px`
 }
-const isShowSubtitles = ref(false);
+const isShowSubtitles = ref(false)
 
-const doubleSubtitle = ref(false);
+const doubleSubtitle = ref(false)
 
-const primarySubtitle = ref<Subtitle | null>(null);
-const secondarySubtitle = ref<Subtitle | null>(null);
+const primarySubtitle = ref<Subtitle | null>(null)
+const secondarySubtitle = ref<Subtitle | null>(null)
 
 async function toggleSubtitlesVisible(isShow: boolean) {
-  isShowSubtitles.value = isShow;
+  isShowSubtitles.value = isShow
   if (isShowSubtitles.value) {
-    toggleSubtitles(currentVideo.value.subtitles[0]!, 'primary');
+    toggleSubtitles(currentVideo.value.subtitles[0]!, 'primary')
     if (doubleSubtitle.value) {
-      toggleSubtitles(currentVideo.value.subtitles[1]!, 'secondary');
+      toggleSubtitles(currentVideo.value.subtitles[1]!, 'secondary')
     }
   }
 }
 
 function toggleDoubleSubtitle() {
-  doubleSubtitle.value = !doubleSubtitle.value;
+  doubleSubtitle.value = !doubleSubtitle.value
   if (doubleSubtitle.value && isShowSubtitles.value) {
-    toggleSubtitles(currentVideo.value.subtitles[1]!, 'secondary');
+    toggleSubtitles(currentVideo.value.subtitles[1]!, 'secondary')
   }
   if (!doubleSubtitle.value) {
-    secondarySubtitle.value = null;
+    secondarySubtitle.value = null
   }
 }
 
 async function toggleSubtitles(item: VideoSubtitle, type: string) {
-  await getLyric(item.lang, currentVideo.value.name);
-  const lyricObj =
-    subtitleList.find((lyric) => lyric.lang === item.lang) ?? null;
+  await getLyric(item.lang, currentVideo.value.name)
+  const lyricObj
+    = subtitleList.find(lyric => lyric.lang === item.lang) ?? null
   if (type === 'primary') {
-    primarySubtitle.value = lyricObj;
-  } else {
-    secondarySubtitle.value = lyricObj;
+    primarySubtitle.value = lyricObj
+  }
+  else {
+    secondarySubtitle.value = lyricObj
   }
 }
 
 async function getLyric(lang: string, name: string) {
-  if (subtitleList.find((item) => item.lang === lang)) return;
+  if (subtitleList.find(item => item.lang === lang))
+    return
   const subtitleData = await $fetch(`/api/lyric`, {
     query: {
       lang,
       name,
     },
-  });
+  })
   if (subtitleData) {
-    subtitleList.push(subtitleData);
+    subtitleList.push(subtitleData)
   }
 }
 
 function back() {
   if (index.value <= 0) {
-    index.value = videoList.length - 1;
-  } else {
-    index.value--;
+    index.value = videoList.length - 1
   }
-  changeVideo(index);
+  else {
+    index.value--
+  }
+  changeVideo(index)
 }
 
 function forward() {
   if (index.value >= videoList.length - 1) {
-    index.value = 0;
-  } else {
-    index.value++;
+    index.value = 0
   }
-  changeVideo(index);
+  else {
+    index.value++
+  }
+  changeVideo(index)
 }
 
 function changeVideo(index: Ref<number>) {
-  thumbRef.value!.style.left = '0%';
-  subtitleList = [];
-  primarySubtitle.value = null;
-  secondarySubtitle.value = null;
-  currentVideo.value = videoList[index.value] as VideoInfo;
-  media.value?.src(currentVideo.value.url, currentVideo.value.type);
+  thumbRef.value!.style.left = '0%'
+  subtitleList = []
+  primarySubtitle.value = null
+  secondarySubtitle.value = null
+  currentVideo.value = videoList[index.value] as VideoInfo
+  media.value?.src(currentVideo.value.url, currentVideo.value.type)
   if (currentVideo.value.subtitles.length < 2) {
-    doubleSubtitle.value = false;
+    doubleSubtitle.value = false
   }
-  toggleSubtitlesVisible(false);
+  toggleSubtitlesVisible(false)
 }
 
 function toggleMute() {
-  media.value?.toggleMuted();
+  media.value?.toggleMuted()
 }
 
-
-
-let MouseInTimer:NodeJS.Timeout|null = null
+let MouseInTimer: NodeJS.Timeout | null = null
 
 const MouseInVideo = ref(false)
 
@@ -342,39 +350,36 @@ interface MouseInElementType {
   stop: () => void
 }
 
+const mouseInElement = ref<null | MouseInElementType>(null)
 
-let mouseInElement = ref<null|MouseInElementType>(null)
-
-
-const isOutside = computed(()=>{
-  if(mouseInElement.value){
+const isOutside = computed(() => {
+  if (mouseInElement.value) {
     return mouseInElement.value.isOutside
   }
   return false
 })
 
-
-watchEffect(()=>{
-  if(!isOutside.value){
+watchEffect(() => {
+  if (!isOutside.value) {
     MouseInVideo.value = true
-    if(MouseInTimer){
+    if (MouseInTimer) {
       clearTimeout(MouseInTimer)
     }
-  }else{
-    MouseInTimer = setTimeout(()=>{
+  }
+  else {
+    MouseInTimer = setTimeout(() => {
       MouseInVideo.value = false
-    },1500)
-  }  
+    }, 1500)
+  }
 })
 
 watchEffect(() => {
   if (media.value) {
-    thumbRef.value!.style.left = `${(media.value.state.currentTime / media.value.state.duration) * 100}%`;
+    thumbRef.value!.style.left = `${(media.value.state.currentTime / media.value.state.duration) * 100}%`
   }
-});
+})
 onMounted(() => {
-  mouseInElement.value  = useMouseInElement(videoRef.value)
-  console.log(mouseInElement.value,'mouseInElement')
+  mouseInElement.value = useMouseInElement(videoRef.value)
   media.value = new GuoPlayer(
     videoRef.value as HTMLVideoElement,
     currentVideo.value.url,
@@ -385,20 +390,20 @@ onMounted(() => {
       loop,
       preload,
     },
-  );
+  )
   // 初始调整
-  adjustFontSize();
+  adjustFontSize()
   const observer = new ResizeObserver(() => {
-    adjustFontSize();
-  });
-  observer.observe(playerRef.value as HTMLDivElement);
-});
+    adjustFontSize()
+  })
+  observer.observe(playerRef.value as HTMLDivElement)
+})
 
 onBeforeUnmount(() => {
   if (media.value) {
-    media.value.destroy();
+    media.value.destroy()
   }
-});
+})
 </script>
 
 <template>
@@ -477,11 +482,11 @@ onBeforeUnmount(() => {
       {{ "注：视频来源与网络，视频目的仅为学习测试用，若侵权联系删除。服务器宽带视频加载速度慢，请谅解。" }}
     </div>
     <div>
-      {{"分别为Baek-hyun（边伯贤）- Elevator、Baek-hyun（边伯贤）- Chocolate、EXO-K - Baby Don't Cry、EXO - History、EXO - Love Me Right"  }}
+      {{ "分别为Baek-hyun（边伯贤）- Elevator、Baek-hyun（边伯贤）- Chocolate、EXO-K - Baby Don't Cry、EXO - History、EXO - Love Me Right" }}
     </div>
   </div>
   <!-- group/control -->
-  <div  ref="guoPlayer" class="guo-player  relative leading-none">
+  <div ref="guoPlayer" class="guo-player  relative leading-none">
     <video
       ref="video"
       objectFit="fill"
@@ -577,10 +582,10 @@ onBeforeUnmount(() => {
       </div>
       <div
         v-if="conterols"
-        class="guo-conrols delay-3000 flex h-0 w-full items-center gap-2 overflow-hidden bg-gray-900/50 px-2 text-gray-50 opacity-0 transition-all duration-300 ease-in-out"   
-        :class="{'h-8 overflow-visible opacity-100':MouseInVideo}"
+        class="guo-conrols delay-3000 flex h-0 w-full items-center gap-2 overflow-hidden bg-gray-900/50 px-2 text-gray-50 opacity-0 transition-all duration-300 ease-in-out"
+        :class="{ 'h-8 overflow-visible opacity-100': MouseInVideo }"
       >
-      <!-- group-hover/control:h-8 group-hover/control:overflow-visible group-hover/control:opacity-100 -->
+        <!-- group-hover/control:h-8 group-hover/control:overflow-visible group-hover/control:opacity-100 -->
         <div
           v-if="videoList.length > 0"
           class="guo-skip-back"
@@ -672,7 +677,7 @@ onBeforeUnmount(() => {
               step="0.01"
               :value="initVolume"
               @input="volumeChange"
-            />
+            >
           </div>
         </div>
         <div
@@ -736,7 +741,7 @@ onBeforeUnmount(() => {
                   :value="doubleSubtitle"
                   class="peer sr-only"
                   @input="toggleDoubleSubtitle"
-                />
+                >
                 <label
                   for="switch"
                   class="before:top-0.25 before:left-0.25 inline-flex h-3 w-6 items-center justify-between rounded-full bg-gray-200 before:absolute before:h-2.5 before:w-2.5 before:rounded-full before:border before:border-gray-300 before:bg-white before:transition-all peer-checked:bg-blue-600 peer-checked:before:translate-x-3 peer-checked:before:border-transparent peer-checked:before:bg-white peer-focus:before:outline-none"
