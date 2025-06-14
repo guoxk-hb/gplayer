@@ -25,6 +25,7 @@ interface videoState {
   type: string | null
   src: string
   options: VideoOptions
+  loaded:boolean
 }
 
 
@@ -55,6 +56,7 @@ export class GuoPlayer {
       player: null,
       type: null,
       src: '',
+      loaded:false,
       options: {
         autoplay: false,
         muted: false,
@@ -91,12 +93,19 @@ export class GuoPlayer {
   }
   private initVideoEvent() {
     this.video.addEventListener('canplay', () => {
+      if(this.state.options.autoplay === false){
+        this.state.loaded = true
+        this.state.paused = true
+      }else{
+        this.state.paused = false
+      }
       // console.log('canplay')
       this.state.canplay = true
     })
     this.video.addEventListener('waiting', () => {
       // console.log('waiting')
       this.state.canplay = false
+      this.state.paused = true
     })
     this.video.addEventListener('timeupdate', (e) => {
       this.state.currentTime = this.video.currentTime * 1000
@@ -275,6 +284,7 @@ export class GuoPlayer {
     }
   }
   src(newSrc: string, type: string) {
+    this.state.canplay = false
     this.state.qualityList = []
     this.state.currentQuality = null
     if (type !== this.state.type) {
@@ -310,6 +320,7 @@ export class GuoPlayer {
     }
   }
   play() {
+    this.state.loaded = false
     const playPromse = this.video.play()
     if (playPromse) {
       playPromse.catch((err) => {
@@ -329,6 +340,7 @@ export class GuoPlayer {
   }
 
   volumeChange(volume: number) {
+    this.video.muted = true
     this.toggleMuted()
     this.state.volume = this.video.volume = volume
   }

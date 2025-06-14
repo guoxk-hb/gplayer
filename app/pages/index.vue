@@ -48,88 +48,16 @@ async function uploadLyric() {
   }
 }
 
-const videoList: VideoInfo[] = [
-  {
-    name: '1',
-    url: '/video/1/output.mpd',
-    type: 'mpd',
-    subtitles: [
-      {
-        lang: 'cmn',
-        label: '中文',
-      },
-      {
-        lang: 'kor',
-        label: '韩文',
-      },
-    ],
-  },
-  {
-    name: '2',
-    url: '/video/2/output.mpd',
-    type: 'mpd',
-    subtitles: [
-      {
-        lang: 'cmn',
-        label: '中文',
-      },
-      {
-        lang: 'kor',
-        label: '韩文',
-      },
-    ],
-  },
-  {
-    name: '3',
-    url: '/video/3/output.mpd',
-    type: 'mpd',
-    subtitles: [
-      {
-        lang: 'cmn',
-        label: '中文',
-      },
-      {
-        lang: 'kor',
-        label: '韩文',
-      },
-    ],
-  },
-  {
-    name: '4',
-    url: '/video/4/4.mp4',
-    type: 'mp4',
-    subtitles: [
-      {
-        lang: 'cmn',
-        label: '中文',
-      },
-      {
-        lang: 'kor',
-        label: '韩文',
-      },
-    ],
-  },
-  {
-    name: '5',
-    url: '/video/5/output.m3u8',
-    type: 'm3u8',
-    subtitles: [
-      {
-        lang: 'cmn',
-        label: '中文',
-      },
-      {
-        lang: 'kor',
-        label: '韩文',
-      },
-    ],
-  },
-];
+const { data }= useFetch('/api/video',{
+  method:'get'
+})
+
+const videoList: VideoInfo[] = data.value as VideoInfo[]
 </script>
 
 <template>
-  <div class="mx-auto mt-20 w-[800px]">
-    <GVideo :video-list="videoList" :autoplay="true" />
+  <div class="mx-auto mt-4 w-[800px]">
+    <GVideo :video-list="videoList" :autoplay="true" :muted="false" />
     <div class="mt-4">
       <label
         for="file-upload"

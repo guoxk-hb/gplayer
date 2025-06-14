@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import type { Representation } from 'dashjs';
 import type { Subtitle, VideoInfo, VideoSubtitle } from '~/types';
-
+import type { UseMouseSourceType } from '@vueuse/core'
+import type { ShallowRef } from 'vue'
 const {
   videoList = [],
   conterols = true,
@@ -30,6 +31,7 @@ interface Props {
   preload?: string;
 }
 
+
 const index = ref(0);
 const currentVideo = ref(videoList[index.value]) as Ref<VideoInfo>;
 
@@ -38,6 +40,7 @@ function toggleQuality(item: Quality) {
     media.value.toggleQuality(item);
   }
 }
+
 
 const volumnIconDict = ref({
   1: 'ri:volume-up-fill',
@@ -51,6 +54,10 @@ const paused = computed(() => {
 const canplay = computed(() => {
   return media.value?.state.canplay;
 });
+
+const loaded = computed(()=>{
+  return media.value?.state.loaded;
+})
 
 const videoMuted = computed(() => {
   return media.value?.state.options?.muted;
@@ -315,13 +322,59 @@ function toggleMute() {
   media.value?.toggleMuted();
 }
 
+
+
+let MouseInTimer:NodeJS.Timeout|null = null
+
+const MouseInVideo = ref(false)
+
+interface MouseInElementType {
+  x: ShallowRef<number, number>
+  y: ShallowRef<number, number>
+  sourceType: ShallowRef<UseMouseSourceType, UseMouseSourceType>
+  elementX: ShallowRef<number, number>
+  elementY: ShallowRef<number, number>
+  elementPositionX: ShallowRef<number, number>
+  elementPositionY: ShallowRef<number, number>
+  elementHeight: ShallowRef<number, number>
+  elementWidth: ShallowRef<number, number>
+  isOutside: ShallowRef<boolean, boolean>
+  stop: () => void
+}
+
+
+let mouseInElement = ref<null|MouseInElementType>(null)
+
+
+const isOutside = computed(()=>{
+  if(mouseInElement.value){
+    return mouseInElement.value.isOutside
+  }
+  return false
+})
+
+
+watchEffect(()=>{
+  if(!isOutside.value){
+    MouseInVideo.value = true
+    if(MouseInTimer){
+      clearTimeout(MouseInTimer)
+    }
+  }else{
+    MouseInTimer = setTimeout(()=>{
+      MouseInVideo.value = false
+    },1500)
+  }  
+})
+
 watchEffect(() => {
   if (media.value) {
     thumbRef.value!.style.left = `${(media.value.state.currentTime / media.value.state.duration) * 100}%`;
   }
 });
-
 onMounted(() => {
+  mouseInElement.value  = useMouseInElement(videoRef.value)
+  console.log(mouseInElement.value,'mouseInElement')
   media.value = new GuoPlayer(
     videoRef.value as HTMLVideoElement,
     currentVideo.value.url,
@@ -349,7 +402,15 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="guo-desc mb-2 grid grid-cols-2 gap-2">
+  <div class="guo-desc mb-2 grid grid-cols-3 gap-2 text-[0.9rem]">
+    <div>
+      <label>{{ '鼠标是否在视频内' }}</label>
+      <span>{{ !isOutside }}</span>
+    </div>
+    <div>
+      <label>{{ '控制栏显示' }}</label>
+      <span>{{ MouseInVideo }}</span>
+    </div>
     <div>
       <label>{{ '是否可播放' }}</label>
       <span>{{ canplay }}</span>
@@ -368,11 +429,11 @@ onBeforeUnmount(() => {
     </div>
     <div>
       <label>{{ '视频预加载百分比' }}</label>
-      <span>{{ bufferPercentage }}</span>
+      <span>{{ `${Math.floor(bufferPercentage * 100)}%` }}</span>
     </div>
     <div>
       <label>{{ '视频进度百分比' }}</label>
-      <span>{{ playPercentage }}</span>
+      <span>{{ `${Math.floor(playPercentage * 100)}%` }}</span>
     </div>
     <div>
       <label>{{ '当前画质' }}</label>
@@ -411,7 +472,16 @@ onBeforeUnmount(() => {
       <span>{{ autoplay }}</span>
     </div>
   </div>
-  <div ref="guoPlayer" class="guo-player group/control relative leading-none">
+  <div class="text-center text-red-600 font-semibold text-[0.75rem]">
+    <div>
+      {{ "注：视频来源与网络，视频目的仅为学习测试用，若侵权联系删除。服务器宽带视频加载速度慢，请谅解。" }}
+    </div>
+    <div>
+      {{"分别为Baek-hyun（边伯贤）- Elevator、Baek-hyun（边伯贤）- Chocolate、EXO-K - Baby Don't Cry、EXO - History、EXO - Love Me Right"  }}
+    </div>
+  </div>
+  <!-- group/control -->
+  <div  ref="guoPlayer" class="guo-player  relative leading-none">
     <video
       ref="video"
       objectFit="fill"
@@ -424,8 +494,8 @@ onBeforeUnmount(() => {
       @dblclick.capture="togglefullScrren"
     />
     <div
-      v-if="false"
-      class="guo-poster absolute left-0 top-0 z-50 h-full w-full bg-gray-900/90"
+      v-if="loaded"
+      class="guo-poster absolute left-0 top-0 z-50 h-full w-full bg-gray-900/90" @pointerdown="playOrPause"
     >
       <div
         class="guo-loading-icon absolute left-1/2 top-1/2 translate-x-[-50%] translate-y-[-50%]"
@@ -458,7 +528,7 @@ onBeforeUnmount(() => {
         <Icon name="ri:error-warning-line" style="color: #f3f4f6" size="3rem" />
       </div>
     </div>
-    <div class="absolute bottom-0 w-full">
+    <div v-if="currentVideo" class="absolute bottom-0 w-full">
       <div
         v-if="isShowSubtitles"
         ref="subtitlesRef"
@@ -507,8 +577,10 @@ onBeforeUnmount(() => {
       </div>
       <div
         v-if="conterols"
-        class="guo-conrols delay-3000 flex h-0 w-full items-center gap-2 overflow-hidden bg-gray-900/50 px-2 text-gray-50 opacity-0 transition-all duration-300 ease-in-out group-hover/control:h-8 group-hover/control:overflow-visible group-hover/control:opacity-100"
+        class="guo-conrols delay-3000 flex h-0 w-full items-center gap-2 overflow-hidden bg-gray-900/50 px-2 text-gray-50 opacity-0 transition-all duration-300 ease-in-out"   
+        :class="{'h-8 overflow-visible opacity-100':MouseInVideo}"
       >
+      <!-- group-hover/control:h-8 group-hover/control:overflow-visible group-hover/control:opacity-100 -->
         <div
           v-if="videoList.length > 0"
           class="guo-skip-back"
