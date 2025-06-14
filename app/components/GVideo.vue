@@ -1,119 +1,43 @@
 <script setup lang="ts">
-const videoRef = useTemplateRef<HTMLVideoElement>('video');
-let media: Ref<null | GuoPlayer> = ref(null);
-onMounted(() => {
-  media.value = new GuoPlayer(
-    videoRef.value as HTMLVideoElement,
-    '/video/output.mpd',
-    'dash',
-  );
-  // 初始调整
-  adjustFontSize();
-  const observer = new ResizeObserver((entries) => {
-    adjustFontSize();
-  });
-  observer.observe(playerRef.value as HTMLDivElement);
-});
-const { data: lyricData, status } = await useAsyncData('lyric', () =>
-  $fetch('/api/lyric'),
-);
-
-const lyric = lyricData.value?.body;
-
-interface Props {
-  videoList?: Array<any>;
-  // sources: Array<any>;
-  conterols?: boolean;
-  mute?: boolean;
-  autoplay?: boolean;
-  loop?: boolean;
-  fluid?: boolean;
-  volume?: number;
-  subtitlesButton?: boolean;
-}
+import type { UseMouseSourceType } from '@vueuse/core'
+import type { Representation } from 'dashjs'
+import type { ShallowRef } from 'vue'
+import type { Subtitle, VideoInfo, VideoSubtitle } from '~/types'
 
 const {
   videoList = [],
   conterols = true,
-  mute = false,
-  autoplay = true,
+  muted = true,
+  autoplay = false,
   loop = false,
-  fluid = false,
+  // fluid = false,
+  preload = 'auto',
   volume: PropVolume = 1,
   subtitlesButton = true,
-} = defineProps<Props>();
+} = defineProps<Props>()
 
-let clickTimer: NodeJS.Timeout | null = null;
+const videoRef = useTemplateRef<HTMLVideoElement>('video')
 
-const playOrPause = (e: MouseEvent) => {
-  if (e.detail < 2)
-    clickTimer = setTimeout(() => {
-      if (media.value) {
-        if (paused.value) {
-          media.value.play();
-        } else {
-          media.value.pause();
-        }
-      }
-      clickTimer = null;
-    }, 200); // 250ms 是一个合适的判断间隔
-};
+const media: Ref<null | GuoPlayer> = ref(null)
 
-function volumeChange(event: Event) {
-  const target = event.target as HTMLInputElement;
-  if (media.value) {
-    media.value.volumeChange(parseFloat(target.value));
-    initVolume.value = parseFloat(target.value);
-  }
+interface Props {
+  videoList?: VideoInfo[]
+  conterols?: boolean
+  muted?: boolean
+  autoplay?: boolean
+  loop?: boolean
+  // fluid?: boolean;
+  volume?: number
+  subtitlesButton?: boolean
+  preload?: string
 }
 
-const playerRef = useTemplateRef<HTMLDivElement>('guoPlayer');
+const index = ref(0)
+const currentVideo = ref(videoList[index.value]) as Ref<VideoInfo>
 
-const progressRef = useTemplateRef<HTMLDivElement>('progressRef');
-
-function changeTime(event: MouseEvent) {
+function toggleQuality(item: Quality) {
   if (media.value) {
-    const target = event.target as HTMLDivElement;
-    const rect = target.getBoundingClientRect();
-    const x = event.clientX - rect.left; // 鼠标点击位置相对于进度条的左边距
-    const percentage = x / progressRef.value!.offsetWidth; // 计算点击位置的百分比
-    media.value.timeChange(percentage * media.value.state.duration); // 根据百分比计算新的时间
-  }
-}
-
-function togglefullScrren(e: MouseEvent) {
-  if (clickTimer) {
-    clearTimeout(clickTimer);
-    clickTimer = null;
-  }
-  e.stopPropagation();
-  if (media.value) {
-    if (!isFullscreen.value) {
-      media.value.fullScreen(playerRef.value as HTMLDivElement);
-    } else {
-      media.value.exitFullScreen();
-    }
-  }
-}
-
-function togglePictureInPicture() {
-  if (media.value) {
-    if (!isPictureInPicture.value) {
-      media.value.pictureInPicture();
-    } else {
-      media.value.exitPictureInPicture();
-    }
-  }
-}
-
-interface IQuality {
-  label: string;
-  representation: dashjs.Representation;
-}
-
-function toggleQuality(item: IQuality) {
-  if (media.value) {
-    media.value.toggleQuality(item);
+    media.value.toggleQuality(item)
   }
 }
 
@@ -121,116 +45,377 @@ const volumnIconDict = ref({
   1: 'ri:volume-up-fill',
   0.5: 'ri:volume-down-fill',
   0: 'ri:volume-mute-fill',
-});
+})
 const paused = computed(() => {
-  return media.value?.state.paused;
-});
+  return media.value?.state.paused
+})
 
 const canplay = computed(() => {
-  return media.value?.state.canplay;
-});
+  return media.value?.state.canplay
+})
+
+const loaded = computed(() => {
+  return media.value?.state.loaded
+})
+
+const videoMuted = computed(() => {
+  return media.value?.state.options?.muted
+})
 
 const currentTime = computed(() => {
   if (media.value) {
-    return useDateFormat(media.value.state.currentTime, 'mm:ss');
-  } else {
-    return '00:00';
+    return useDateFormat(media.value.state.currentTime, 'mm:ss')
   }
-});
+  else {
+    return '00:00'
+  }
+})
 
 const duration = computed(() => {
   if (media.value) {
-    return useDateFormat(media.value.state.duration, 'mm:ss');
-  } else {
-    return '00:00';
+    return useDateFormat(media.value.state.duration, 'mm:ss')
   }
-});
-const initVolume = ref(PropVolume);
+  else {
+    return '00:00'
+  }
+})
+const initVolume = ref(PropVolume)
 
-const volume = computed(() => {
-  return media.value?.state.volume;
-});
+// const volume = computed(() => {
+//   return media.value?.state.volume;
+// });
 
 const playPercentage = computed(() => {
   if (media.value) {
-    return media.value.state.playPercentage;
+    return media.value.state.playPercentage
   }
-  return 0;
-});
+  return 0
+})
 const bufferPercentage = computed(() => {
   if (media.value) {
-    return media.value.state.bufferPercentage;
+    return media.value.state.bufferPercentage
   }
-  return 0;
-});
+  return 0
+})
 
 const isFullscreen = computed(() => {
-  return media.value?.state.isFullscreen;
-});
+  return media.value?.state.isFullscreen
+})
 
 const isPictureInPicture = computed(() => {
-  return media.value?.state.isPictureInPicture;
-});
+  return media.value?.state.isPictureInPicture
+})
 
 const error = computed(() => {
-  return media.value?.state.error;
-});
+  return media.value?.state.error
+})
 
 const qualityList = computed(() => {
-  return media.value?.state.qualityList || [];
-});
+  return media.value?.state.qualityList || []
+})
 
 const currentQuality = computed(() => {
-  return media.value?.state.currentQuality;
-});
+  return media.value?.state.currentQuality
+})
 
-const currentLyric = computed(() => {
-  if (media.value) {
-    for (let item of lyric) {
-      if (
-        item.from <= media.value?.state.currentTime / 1000 &&
-        item.to >= media.value?.state.currentTime / 1000
-      ) {
-        return item.content;
+let clickTimer: NodeJS.Timeout | null = null
+
+function playOrPause(e: PointerEvent) {
+  if (e.detail < 2) {
+    clickTimer = setTimeout(() => {
+      if (media.value) {
+        if (paused.value) {
+          media.value.play()
+        }
+        else {
+          media.value.pause()
+        }
       }
+      clickTimer = null
+    }, 200)
+  } // 250ms 是一个合适的判断间隔
+}
+
+function volumeChange(event: Event) {
+  const target = event.target as HTMLInputElement
+  if (media.value) {
+    media.value.volumeChange(Number.parseFloat(target.value))
+    initVolume.value = Number.parseFloat(target.value)
+  }
+}
+
+const playerRef = useTemplateRef<HTMLDivElement>('guoPlayer')
+
+const progressRef = useTemplateRef<HTMLDivElement>('progressRef')
+
+const thumbRef = useTemplateRef<HTMLDivElement>('thumbRef')
+
+let isMove = false
+
+function onBarPointStart(event: PointerEvent) {
+  event.preventDefault()
+  isMove = true
+  thumbRef.value!.setPointerCapture(event.pointerId)
+}
+
+function onBarPointMove(event: PointerEvent) {
+  if (!isMove)
+    return
+  let newLeft = event.clientX - progressRef.value!.getBoundingClientRect().left
+  if (newLeft < 0) {
+    newLeft = 0
+  }
+  const rightEdge
+    = progressRef.value!.offsetWidth - thumbRef.value!.offsetWidth
+  if (newLeft > rightEdge) {
+    newLeft = rightEdge
+  }
+  const percentage = newLeft / progressRef.value!.offsetWidth
+  thumbRef.value!.style.left = `${percentage * 100}%`
+}
+
+function onBarPointEnd() {
+  isMove = false
+  if (media.value) {
+    const percentage = Number(thumbRef.value!.style.left.split('%')[0]) / 100
+    media.value.timeChange(percentage * media.value.state.duration) // 根据百分比计算新的时间
+  }
+}
+
+function changeTime(event: PointerEvent) {
+  event.preventDefault()
+  if (media.value) {
+    const target = event.target as HTMLDivElement
+    const rect = target.getBoundingClientRect()
+    const x = event.clientX - rect.left // 鼠标点击位置相对于进度条的左边距
+    const percentage = x / progressRef.value!.offsetWidth // 计算点击位置的百分比
+    media.value.timeChange(percentage * media.value.state.duration) // 根据百分比计算新的时间
+    thumbRef.value!.style.left = `${percentage * 100}%`
+  }
+}
+
+function togglefullScrren(e: MouseEvent) {
+  if (clickTimer) {
+    clearTimeout(clickTimer)
+    clickTimer = null
+  }
+  e.stopPropagation()
+  if (media.value) {
+    if (!isFullscreen.value) {
+      media.value.fullScreen(playerRef.value as HTMLDivElement)
+    }
+    else {
+      media.value.exitFullScreen()
     }
   }
-  return '';
-});
-const text = useTemplateRef<HTMLDivElement>('subtitlesRef');
+}
+
+function togglePictureInPicture() {
+  if (media.value) {
+    if (!isPictureInPicture.value) {
+      media.value.pictureInPicture()
+    }
+    else {
+      media.value.exitPictureInPicture()
+    }
+  }
+}
+
+interface Quality {
+  label: string
+  representation: Representation
+}
+
+let subtitleList: Subtitle[] = []
+
+const subtitlesRef = useTemplateRef<HTMLDivElement>('subtitlesRef')
 
 function adjustFontSize() {
-  const containerWidth = playerRef.value!.clientWidth;
-  const baseSize = 10; // 基础字体大小（像素）
-  const minSize = baseSize;
-  const maxSize = baseSize * 3; // 最大字体大小为两倍基础大小
-  const factor = 0.01; // 调整因子
-  let newSize = baseSize + containerWidth * factor;
-  newSize = Math.max(minSize, Math.min(newSize, maxSize)); // 确保在最小和最大值之间
-  if (!text.value) return;
-  text.value.style.fontSize = newSize + 'px';
+  const containerWidth = playerRef.value!.clientWidth
+  const baseSize = 10 // 基础字体大小（像素）
+  const minSize = baseSize
+  const maxSize = baseSize * 3 // 最大字体大小为两倍基础大小
+  const factor = 0.01 // 调整因子
+  let newSize = baseSize + containerWidth * factor
+  newSize = Math.max(minSize, Math.min(newSize, maxSize)) // 确保在最小和最大值之间
+  if (!subtitlesRef.value)
+    return
+  subtitlesRef.value.style.fontSize = `${newSize}px`
+}
+const isShowSubtitles = ref(false)
+
+const doubleSubtitle = ref(false)
+
+const primarySubtitle = ref<Subtitle | null>(null)
+const secondarySubtitle = ref<Subtitle | null>(null)
+
+async function toggleSubtitlesVisible(isShow: boolean) {
+  isShowSubtitles.value = isShow
+  if (isShowSubtitles.value) {
+    toggleSubtitles(currentVideo.value.subtitles[0]!, 'primary')
+    if (doubleSubtitle.value) {
+      toggleSubtitles(currentVideo.value.subtitles[1]!, 'secondary')
+    }
+  }
 }
 
-function toggleSubtitles() {
-  isShowSubtitles.value = !isShowSubtitles.value;
+function toggleDoubleSubtitle() {
+  doubleSubtitle.value = !doubleSubtitle.value
+  if (doubleSubtitle.value && isShowSubtitles.value) {
+    toggleSubtitles(currentVideo.value.subtitles[1]!, 'secondary')
+  }
+  if (!doubleSubtitle.value) {
+    secondarySubtitle.value = null
+  }
 }
 
-const isShowSubtitles = ref(false);
+async function toggleSubtitles(item: VideoSubtitle, type: string) {
+  await getLyric(item.lang, currentVideo.value.name)
+  const lyricObj
+    = subtitleList.find(lyric => lyric.lang === item.lang) ?? null
+  if (type === 'primary') {
+    primarySubtitle.value = lyricObj
+  }
+  else {
+    secondarySubtitle.value = lyricObj
+  }
+}
 
-const subtitles = [
-  {
-    label: '中文（中国）',
-  },
-  {
-    label: '韩语',
-  },
-];
+async function getLyric(lang: string, name: string) {
+  if (subtitleList.find(item => item.lang === lang))
+    return
+  const subtitleData = await $fetch(`/api/lyric`, {
+    query: {
+      lang,
+      name,
+    },
+  })
+  if (subtitleData) {
+    subtitleList.push(subtitleData)
+  }
+}
 
-const doubleSubtitle = ref(false);
+function back() {
+  if (index.value <= 0) {
+    index.value = videoList.length - 1
+  }
+  else {
+    index.value--
+  }
+  changeVideo(index)
+}
+
+function forward() {
+  if (index.value >= videoList.length - 1) {
+    index.value = 0
+  }
+  else {
+    index.value++
+  }
+  changeVideo(index)
+}
+
+function changeVideo(index: Ref<number>) {
+  thumbRef.value!.style.left = '0%'
+  subtitleList = []
+  primarySubtitle.value = null
+  secondarySubtitle.value = null
+  currentVideo.value = videoList[index.value] as VideoInfo
+  media.value?.src(currentVideo.value.url, currentVideo.value.type)
+  if (currentVideo.value.subtitles.length < 2) {
+    doubleSubtitle.value = false
+  }
+  toggleSubtitlesVisible(false)
+}
+
+function toggleMute() {
+  media.value?.toggleMuted()
+}
+
+let MouseInTimer: NodeJS.Timeout | null = null
+
+const MouseInVideo = ref(false)
+
+interface MouseInElementType {
+  x: ShallowRef<number, number>
+  y: ShallowRef<number, number>
+  sourceType: ShallowRef<UseMouseSourceType, UseMouseSourceType>
+  elementX: ShallowRef<number, number>
+  elementY: ShallowRef<number, number>
+  elementPositionX: ShallowRef<number, number>
+  elementPositionY: ShallowRef<number, number>
+  elementHeight: ShallowRef<number, number>
+  elementWidth: ShallowRef<number, number>
+  isOutside: ShallowRef<boolean, boolean>
+  stop: () => void
+}
+
+const mouseInElement = ref<null | MouseInElementType>(null)
+
+const isOutside = computed(() => {
+  if (mouseInElement.value) {
+    return mouseInElement.value.isOutside
+  }
+  return false
+})
+
+watchEffect(() => {
+  if (!isOutside.value) {
+    MouseInVideo.value = true
+    if (MouseInTimer) {
+      clearTimeout(MouseInTimer)
+    }
+  }
+  else {
+    MouseInTimer = setTimeout(() => {
+      MouseInVideo.value = false
+    }, 1500)
+  }
+})
+
+watchEffect(() => {
+  if (media.value) {
+    thumbRef.value!.style.left = `${(media.value.state.currentTime / media.value.state.duration) * 100}%`
+  }
+})
+onMounted(() => {
+  mouseInElement.value = useMouseInElement(videoRef.value)
+  media.value = new GuoPlayer(
+    videoRef.value as HTMLVideoElement,
+    currentVideo.value.url,
+    currentVideo.value.type,
+    {
+      autoplay,
+      muted,
+      loop,
+      preload,
+    },
+  )
+  // 初始调整
+  adjustFontSize()
+  const observer = new ResizeObserver(() => {
+    adjustFontSize()
+  })
+  observer.observe(playerRef.value as HTMLDivElement)
+})
+
+onBeforeUnmount(() => {
+  if (media.value) {
+    media.value.destroy()
+  }
+})
 </script>
 
 <template>
-  <div class="guo-desc mb-2 grid grid-cols-2 gap-2">
+  <div class="guo-desc mb-2 grid grid-cols-3 gap-2 text-[0.9rem]">
+    <div>
+      <label>{{ '鼠标是否在视频内' }}</label>
+      <span>{{ !isOutside }}</span>
+    </div>
+    <div>
+      <label>{{ '控制栏显示' }}</label>
+      <span>{{ MouseInVideo }}</span>
+    </div>
     <div>
       <label>{{ '是否可播放' }}</label>
       <span>{{ canplay }}</span>
@@ -249,11 +434,11 @@ const doubleSubtitle = ref(false);
     </div>
     <div>
       <label>{{ '视频预加载百分比' }}</label>
-      <span>{{ bufferPercentage }}</span>
+      <span>{{ `${Math.floor(bufferPercentage * 100)}%` }}</span>
     </div>
     <div>
       <label>{{ '视频进度百分比' }}</label>
-      <span>{{ playPercentage }}</span>
+      <span>{{ `${Math.floor(playPercentage * 100)}%` }}</span>
     </div>
     <div>
       <label>{{ '当前画质' }}</label>
@@ -279,19 +464,43 @@ const doubleSubtitle = ref(false);
       <label>{{ '双语字幕' }}</label>
       <span>{{ doubleSubtitle }}</span>
     </div>
+    <div>
+      <label>{{ '是否静音' }}</label>
+      <span>{{ videoMuted }}</span>
+    </div>
+    <div>
+      <label>{{ '预加载模式' }}</label>
+      <span>{{ preload }}</span>
+    </div>
+    <div>
+      <label>{{ '自动播放' }}</label>
+      <span>{{ autoplay }}</span>
+    </div>
   </div>
-  <div ref="guoPlayer" class="guo-player group/control relative leading-none">
+  <div class="text-center text-red-600 font-semibold text-[0.75rem]">
+    <div>
+      {{ "注：视频来源与网络，视频目的仅为学习测试用，若侵权联系删除。服务器宽带视频加载速度慢，请谅解。" }}
+    </div>
+    <div>
+      {{ "分别为Baek-hyun（边伯贤）- Elevator、Baek-hyun（边伯贤）- Chocolate、EXO-K - Baby Don't Cry、EXO - History、EXO - Love Me Right" }}
+    </div>
+  </div>
+  <!-- group/control -->
+  <div ref="guoPlayer" class="guo-player  relative leading-none">
     <video
-      @pointerdown.capture="playOrPause"
-      @dblclick.capture="togglefullScrren"
-      objectFit="fill"
       ref="video"
+      objectFit="fill"
       class="guo-video bg-#f3f4f6 h-full w-full"
       crossorigin="anonymous"
-    ></video>
+      :preload="preload"
+      :loop="loop"
+      :muted="muted"
+      @pointerdown.capture="playOrPause"
+      @dblclick.capture="togglefullScrren"
+    />
     <div
-      v-if="false"
-      class="guo-poster absolute left-0 top-0 h-full w-full bg-gray-900/90"
+      v-if="loaded"
+      class="guo-poster absolute left-0 top-0 z-50 h-full w-full bg-gray-900/90" @pointerdown="playOrPause"
     >
       <div
         class="guo-loading-icon absolute left-1/2 top-1/2 translate-x-[-50%] translate-y-[-50%]"
@@ -301,7 +510,7 @@ const doubleSubtitle = ref(false);
     </div>
     <div
       v-if="!canplay"
-      class="guo-loading absolute left-0 top-0 z-20 h-full w-full bg-gray-900/90"
+      class="guo-loading absolute left-0 top-0 z-50 h-full w-full bg-gray-900/90"
     >
       <div
         class="guo-loading-icon absolute left-1/2 top-1/2 translate-x-[-50%] translate-y-[-50%]"
@@ -316,7 +525,7 @@ const doubleSubtitle = ref(false);
     </div>
     <div
       v-if="error"
-      class="guo-error absolute left-0 top-0 h-full w-full bg-gray-900/90"
+      class="guo-error absolute left-0 top-0 z-50 h-full w-full bg-gray-900/90"
     >
       <div
         class="guo-error-icon absolute left-1/2 top-1/2 translate-x-[-50%] translate-y-[-50%]"
@@ -324,107 +533,183 @@ const doubleSubtitle = ref(false);
         <Icon name="ri:error-warning-line" style="color: #f3f4f6" size="3rem" />
       </div>
     </div>
-    <div class="absolute bottom-0 w-full">
+    <div v-if="currentVideo" class="absolute bottom-0 w-full">
       <div
-        ref="subtitlesRef"
         v-if="isShowSubtitles"
-        class="guo-subtitles m-auto w-fit text-center text-gray-200"
+        ref="subtitlesRef"
+        class="guo-subtitles m-auto mb-2 w-fit text-center text-gray-200"
       >
         <div class="guo-subtitles-text">
           <div class="guo-subtitles-text-content">
-            <div
-              class="guo-subtitles-text-content-text my-[0.25em] rounded-sm bg-gray-900/60 px-[0.5em] py-[0.5em]"
-              v-for="(item, index) in currentLyric"
-              :key="index"
-            >
-              {{ item }}
+            <div class="h-[2em]">
+              <div
+                v-if="
+                  useCurrentLyric(
+                    primarySubtitle?.body ?? [],
+                    media?.state.currentTime ?? 0,
+                  )
+                "
+                class="guo-subtitles-text-content-text my-[0.25em] rounded-sm bg-gray-900/60 px-[0.5em] py-[0.5em]"
+              >
+                {{
+                  useCurrentLyric(
+                    primarySubtitle?.body ?? [],
+                    media?.state.currentTime ?? 0,
+                  )
+                }}
+              </div>
+            </div>
+            <div v-if="doubleSubtitle" class="h-[2em]">
+              <div
+                v-if="
+                  useCurrentLyric(
+                    secondarySubtitle?.body ?? [],
+                    media?.state.currentTime ?? 0,
+                  )
+                "
+                class="guo-subtitles-text-content-text my-[0.25em] rounded-sm bg-gray-900/60 px-[0.5em] py-[0.5em]"
+              >
+                {{
+                  useCurrentLyric(
+                    secondarySubtitle?.body ?? [],
+                    media?.state.currentTime ?? 0,
+                  )
+                }}
+              </div>
             </div>
           </div>
         </div>
       </div>
       <div
-        class="guo-conrols delay-3000 flex h-0 w-full items-center gap-2 overflow-hidden bg-gray-900/50 px-2 text-gray-50 opacity-0 transition-all duration-300 ease-in-out group-hover/control:h-8 group-hover/control:overflow-visible group-hover/control:opacity-100"
+        v-if="conterols"
+        class="guo-conrols delay-3000 flex h-0 w-full items-center gap-2 overflow-hidden bg-gray-900/50 px-2 text-gray-50 opacity-0 transition-all duration-300 ease-in-out"
+        :class="{ 'h-8 overflow-visible opacity-100': MouseInVideo }"
       >
-        <div v-if="videoList.length > 0" class="guo-skip-back">
+        <!-- group-hover/control:h-8 group-hover/control:overflow-visible group-hover/control:opacity-100 -->
+        <div
+          v-if="videoList.length > 0"
+          class="guo-skip-back"
+          @pointerdown="back()"
+        >
           <Icon size="20" name="ri:skip-back-fill" style="color: #f3f4f6" />
         </div>
         <div class="guo-play" @pointerdown="playOrPause">
           <Icon
-            size="20"
             v-if="paused"
+            size="20"
             name="ri:play-fill"
             style="color: #f3f4f6"
           />
-          <Icon size="20" v-else name="ri:pause-fill" style="color: #f3f4f6" />
+          <Icon v-else size="20" name="ri:pause-fill" style="color: #f3f4f6" />
         </div>
-        <div v-if="videoList.length > 0" class="guo-skip-forward">
+        <div
+          v-if="videoList.length > 0"
+          class="guo-skip-forward"
+          @pointerdown="forward()"
+        >
           <Icon size="20" name="ri:skip-forward-fill" style="color: #f3f4f6" />
         </div>
-        <div class="guo-current-time">{{ currentTime }}</div>
-        <div class="guo-progress flex flex-auto items-center">
+        <div class="guo-current-time">
+          {{ currentTime }}
+        </div>
+        <div class="guo-progress mr-1 flex flex-1 items-center">
           <div
             ref="progressRef"
-            class="guo-progress-bar relative h-1 w-full cursor-pointer overflow-hidden rounded-full bg-gray-400/50"
-            @pointerdown.capture.stop="changeTime"
+            class="guo-progress-bar relative h-1 w-full cursor-pointer rounded-full bg-gray-400/50"
+            @pointerdown.stop="onBarPointStart"
+            @pointermove.stop="onBarPointMove"
+            @pointerup.stop="onBarPointEnd"
           >
             <div
-              class="guo-progress-bar-current relative z-10 h-full rounded-full bg-indigo-500 shadow-2xl shadow-indigo-500/50"
-              :style="{ width: playPercentage * 100 + '%' }"
-            ></div>
+              ref="thumbRef"
+              :style="{ left: 0 }"
+              class="guo-progress-thumb absolute top-[50%] z-30 h-2 w-2 -translate-y-[50%] rounded-sm bg-violet-500"
+            />
             <div
-              class="guo-progress-bar-buffer z-1 absolute top-0 h-full rounded-full bg-indigo-300"
-              :style="{ width: bufferPercentage * 100 + '%' }"
-            ></div>
-            <!-- <input class="guo-progress-bar-current w-full" type="range" />
-              <input class="guo-progress-bar-buffer absolute w-full" type="range" /> -->
+              class="guo-progress-bar-buffer absolute top-0 z-20 h-full w-full rounded-full bg-indigo-300 bg-transparent"
+              @pointerdown="changeTime"
+            />
+            <div
+              class="guo-progress-bar-current relative z-10 h-full rounded-l-full bg-indigo-500 shadow-2xl shadow-indigo-500/50"
+              :style="{ width: `${playPercentage * 100}%` }"
+            />
+            <div
+              class="guo-progress-bar-buffer absolute top-0 h-full rounded-full bg-indigo-300"
+              :style="{ width: `${bufferPercentage * 100}%` }"
+            />
           </div>
         </div>
-        <div class="guo-time">{{ duration }}</div>
+        <div class="guo-time">
+          {{ duration }}
+        </div>
         <div class="guo-volume group/volume relative flex overflow-hidden">
           <div class="group-hover/volume:pr-2">
-            <Icon size="20" :name="volumnIconDict[1]" style="color: #f3f4f6" />
+            <Icon
+              v-show="initVolume === 0 || videoMuted"
+              size="20"
+              :name="volumnIconDict[0]"
+              style="color: #f3f4f6"
+              @click="toggleMute"
+            />
+            <Icon
+              v-show="0 < initVolume && initVolume <= 0.5 && !videoMuted"
+              size="20"
+              :name="volumnIconDict[0.5]"
+              style="color: #f3f4f6"
+              @click="toggleMute"
+            />
+            <Icon
+              v-show="0.5 < initVolume && initVolume <= 1 && !videoMuted"
+              size="20"
+              :name="volumnIconDict[1]"
+              style="color: #f3f4f6"
+              @click="toggleMute"
+            />
           </div>
           <div
             class="w-0 overflow-hidden leading-[10px] shadow transition-all duration-300 ease-in-out group-hover/volume:w-24"
           >
             <input
-              @input="volumeChange"
               type="range"
               class="guo-volume-bar w-full cursor-pointer appearance-none rounded-full"
               min="0"
               max="1"
               step="0.01"
               :value="initVolume"
-            />
+              @input="volumeChange"
+            >
           </div>
         </div>
-        <!-- <div class="guo-subtitles">
-          <div v-for="item in qualityList" :key="item.label">{{item.label}}</div>
-        </div> -->
-        <div class="guo-quality group/quality relative h-8 leading-8">
+        <div
+          v-if="currentQuality"
+          class="guo-quality group/quality relative h-8 select-none leading-8"
+        >
           <div class="guo-quality-current">
-            {{ currentQuality?.label }}
+            {{ currentQuality.label }}
           </div>
           <div
-            class="guo-quality-all absolute bottom-full left-[50%] w-[200%] -translate-x-[50%] rounded-t-sm bg-gray-900/50 leading-none opacity-0 transition-all duration-300 group-hover/quality:opacity-100"
+            class="guo-quality-all absolute bottom-full left-[50%] w-[200%] -translate-x-[50%] rounded-t-sm bg-gray-900/50 p-1 leading-none opacity-0 transition-all duration-300 group-hover/quality:opacity-100"
           >
             <div
-              @pointerdown="toggleQuality(item)"
-              class="my-1 w-full py-1 text-center"
               v-for="item in qualityList"
               :key="item.label"
+              class="box-bo my-1 w-full cursor-pointer py-1 text-center hover:bg-gray-50/10"
+              :class="{
+                'text-violet-500': currentQuality.label === item.label,
+              }"
+              @pointerdown="toggleQuality(item as Quality)"
             >
               {{ item.label }}
             </div>
           </div>
         </div>
         <div
-          v-if="subtitlesButton"
-          class="guo-subtitles group/subtitles relative h-8 leading-8"
+          v-if="subtitlesButton && currentVideo.subtitles?.length > 0"
+          class="guo-subtitles group/subtitles relative h-8 select-none leading-8"
         >
           <div
             class="guo-subtitles-current relative"
-            @pointerdown="toggleSubtitles"
+            @pointerdown="toggleSubtitlesVisible(!isShowSubtitles)"
           >
             <Icon
               v-if="isShowSubtitles"
@@ -434,54 +719,66 @@ const doubleSubtitle = ref(false);
               size="20"
             />
             <Icon
-              size="20"
               v-else
+              size="20"
               name="solar:subtitles-linear"
               style="color: #f3f4f6"
             />
           </div>
           <div
-            class="guo-subtitles-all absolute -right-2 bottom-full w-fit rounded-t-sm bg-gray-900/50 p-1 text-left text-[0.9em] leading-none opacity-0 group-hover/subtitles:opacity-100"
+            class="guo-subtitles-all absolute -right-4 bottom-full hidden w-fit rounded-t-sm bg-gray-900/50 p-1 px-4 text-left text-[0.9em] leading-none group-hover/subtitles:block"
             absolute
             bottom-full
           >
-            <div class="mt-2 w-24">
+            <div v-if="currentVideo.subtitles.length >= 2" class="mt-2 w-full">
               <span>双语字幕</span>
               <label
                 class="relative ml-2 inline-flex cursor-pointer items-center"
               >
                 <input
+                  id="switch"
                   type="checkbox"
                   :value="doubleSubtitle"
-                  @input="doubleSubtitle = !doubleSubtitle"
-                  id="switch"
                   class="peer sr-only"
-                />
+                  @input="toggleDoubleSubtitle"
+                >
                 <label
                   for="switch"
-                  class="before:left-0.25 before:top-0.25 inline-flex h-3 w-6 items-center justify-between rounded-full bg-gray-200 before:absolute before:h-2.5 before:w-2.5 before:rounded-full before:border before:border-gray-300 before:bg-white before:transition-all peer-checked:bg-blue-600 peer-checked:before:translate-x-3 peer-checked:before:border-transparent peer-checked:before:bg-white peer-focus:before:outline-none"
-                ></label>
+                  class="before:top-0.25 before:left-0.25 inline-flex h-3 w-6 items-center justify-between rounded-full bg-gray-200 before:absolute before:h-2.5 before:w-2.5 before:rounded-full before:border before:border-gray-300 before:bg-white before:transition-all peer-checked:bg-blue-600 peer-checked:before:translate-x-3 peer-checked:before:border-transparent peer-checked:before:bg-white peer-focus:before:outline-none"
+                />
               </label>
             </div>
             <div
-              class="h-auto w-24 text-left transition-all duration-500 ease-in-out"
-              :class="{ 'w-48': doubleSubtitle }"
+              class="h-auto text-left transition-all duration-500 ease-in-out"
+              :class="{
+                'w-48': doubleSubtitle,
+                'w-24': !doubleSubtitle && currentVideo.subtitles.length >= 2,
+                'w-14': currentVideo.subtitles.length < 2,
+              }"
             >
-              <div class="flex w-48">
-                <div class="w-24">
+              <div
+                class="w-42 mx-3 flex justify-between"
+                :class="{ 'mx-3': doubleSubtitle }"
+              >
+                <div class="w-auto">
                   <div
                     class="my-1 py-1 text-[0.75em]"
                     :class="{
                       visible: doubleSubtitle,
                       invisible: !doubleSubtitle,
+                      hidden: currentVideo.subtitles.length < 2,
                     }"
                   >
                     {{ '主字幕' }}
                   </div>
                   <div
+                    v-for="item in currentVideo.subtitles"
+                    :key="item.lang"
                     class="my-1 w-full py-1"
-                    v-for="item in subtitles"
-                    :key="item.label"
+                    :class="{
+                      'text-violet-500': item.lang === primarySubtitle?.lang,
+                    }"
+                    @pointerdown="toggleSubtitles(item, 'primary')"
                   >
                     {{ item.label }}
                   </div>
@@ -493,12 +790,19 @@ const doubleSubtitle = ref(false);
                   enter-from-class="opacity-0 translate-x-4"
                   leave-to-class="opacity-0 translate-x-4"
                 >
-                  <div v-show="doubleSubtitle" class="w-24">
-                    <div class="my-1 py-1 text-[0.75em]">{{ '副字幕' }}</div>
+                  <div v-show="doubleSubtitle" class="w-auto">
+                    <div class="my-1 py-1 text-[0.75em]">
+                      {{ '副字幕' }}
+                    </div>
                     <div
+                      v-for="item in currentVideo.subtitles"
+                      :key="item.lang"
                       class="my-1 w-full py-1"
-                      v-for="item in subtitles"
-                      :key="item.label"
+                      :class="{
+                        'text-violet-500':
+                          item.lang === secondarySubtitle?.lang,
+                      }"
+                      @pointerdown="toggleSubtitles(item, 'secondary')"
                     >
                       {{ item.label }}
                     </div>
@@ -513,29 +817,29 @@ const doubleSubtitle = ref(false);
           @pointerdown.stop="togglePictureInPicture"
         >
           <Icon
-            size="20"
             v-if="!isPictureInPicture"
+            size="20"
             name="ri:picture-in-picture-2-fill"
             style="color: #f3f4f6"
           />
           <Icon
-            size="20"
             v-else
+            size="20"
             name="ri:picture-in-picture-exit-fill"
             style="color: #f3f4f6"
           />
         </div>
         <div class="guo-fullscreen" @pointerdown.stop="togglefullScrren">
           <Icon
-            size="20"
             v-if="!isFullscreen"
-            name="ri:fullscreen-line"
+            size="20"
+            name="ri:fullscreen-fill"
             style="color: #f3f4f6"
           />
           <Icon
-            size="20"
             v-else
-            name="ri:fullscreen-exit-line"
+            size="20"
+            name="ri:fullscreen-exit-fill"
             style="color: #f3f4f6"
           />
         </div>
@@ -605,7 +909,7 @@ const doubleSubtitle = ref(false);
 }
 
 .guo-volume-bar {
-  -webkit-appearance: none;
+  /* -webkit-appearance: none; */
   /* 清除默认样式 */
   /* background: transparent; */
   /* 清除默认背景 */

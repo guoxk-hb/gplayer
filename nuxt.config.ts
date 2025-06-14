@@ -2,7 +2,21 @@
 export default defineNuxtConfig({
   compatibilityDate: '2025-05-15',
   devtools: { enabled: true },
-
+  app: {
+    head: {
+      viewport: 'width=device-width,initial-scale=1',
+      link: [
+        { rel: 'icon', href: '/logo.ico', sizes: 'any' },
+        { rel: 'icon', type: 'image/svg+xml', href: '/logo.svg' },
+        { rel: 'apple-touch-icon', href: '/logo.png' },
+      ],
+      meta: [
+        { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+        { name: 'description', content: '通过 Vue + Nuxt 编写的Web视频播放器，支持mpd、m3u8、flv及Mp4格式。' },
+        { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' },
+      ],
+    },
+  },
   modules: [
     '@nuxt/eslint',
     '@nuxt/fonts',
@@ -10,18 +24,17 @@ export default defineNuxtConfig({
     '@nuxt/image',
     '@vueuse/nuxt',
     '@nuxtjs/tailwindcss',
-    '@nuxt/ui'
   ],
   plugins: [
     { src: '~/plugins/hls', mode: 'client' },
     { src: '~/plugins/flv', mode: 'client' },
-    { src: '~/plugins/dash', mode: 'client' }
+    { src: '~/plugins/dash', mode: 'client' },
   ],
   future: {
     compatibilityVersion: 4,
   },
   icon: {
     mode: 'css',
-    cssLayer: 'base'
+    cssLayer: 'base',
   },
 })
