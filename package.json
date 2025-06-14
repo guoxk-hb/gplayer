@@ -16,6 +16,7 @@
     "@nuxt/fonts": "catalog:",
     "@nuxt/icon": "catalog:",
     "@nuxt/image": "catalog:",
+    "@nuxtjs/robots": "5.2.10",
     "@nuxtjs/tailwindcss": "catalog:",
     "@vueuse/nuxt": "catalog:",
     "dashjs": "catalog:",
