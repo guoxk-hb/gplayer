@@ -2,6 +2,21 @@ import type { VideoInfo } from '~/types'
 
 const videoList: VideoInfo[] = [
   {
+    name: '5',
+    url: '/video/5/output.m3u8',
+    type: 'm3u8',
+    subtitles: [
+      {
+        lang: 'cmn',
+        label: '中文',
+      },
+      {
+        lang: 'kor',
+        label: '韩文',
+      },
+    ],
+  },
+  {
     name: '3',
     url: '/video/3/output.mpd',
     type: 'mpd',
@@ -50,21 +65,6 @@ const videoList: VideoInfo[] = [
     name: '4',
     url: '/video/4/4.mp4',
     type: 'mp4',
-    subtitles: [
-      {
-        lang: 'cmn',
-        label: '中文',
-      },
-      {
-        lang: 'kor',
-        label: '韩文',
-      },
-    ],
-  },
-  {
-    name: '5',
-    url: '/video/5/output.m3u8',
-    type: 'm3u8',
     subtitles: [
       {
         lang: 'cmn',

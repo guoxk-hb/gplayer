@@ -140,7 +140,7 @@ export class GuoPlayer {
     })
   }
 
-  private hls(src: string) {
+  private async hls(src: string) {
     const Hls = useNuxtApp().$Hls
     if (Hls.isSupported()) {
       const hls = this.state.player = new Hls(

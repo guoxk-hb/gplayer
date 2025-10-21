@@ -61,7 +61,7 @@ const videoList: VideoInfo[] = data.value as VideoInfo[]
 <template>
   <div class="mx-auto mt-4 w-[800px]">
     <GVideo :video-list="videoList" :autoplay="true" :muted="false" />
-    <div class="mt-40">
+    <div class="mt-20">
       <label
         for="file-upload"
         class="inline-flex cursor-pointer items-center rounded-2xl bg-violet-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors duration-200 hover:bg-violet-700"

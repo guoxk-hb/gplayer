@@ -10,7 +10,7 @@ export default defineEventHandler(async (event) => {
 
     const filePart = formData.find(part => part.name === 'file')
 
-    if (!filePart || !filePart.data) {
+    if (!filePart) {
       return { error: 'No file uploaded' }
     }
 
