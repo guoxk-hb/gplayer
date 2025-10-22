@@ -499,7 +499,7 @@ onBeforeUnmount(() => {
       @dblclick.capture="togglefullScrren"
     />
     <div
-      v-if="loaded"
+      v-show="loaded"
       class="guo-poster absolute left-0 top-0 z-50 h-full w-full bg-gray-900/90" @pointerdown="playOrPause"
     >
       <div
@@ -509,7 +509,7 @@ onBeforeUnmount(() => {
       </div>
     </div>
     <div
-      v-if="!canplay"
+      v-show="!canplay"
       class="guo-loading absolute left-0 top-0 z-50 h-full w-full bg-gray-900/90"
     >
       <div
@@ -524,7 +524,7 @@ onBeforeUnmount(() => {
       </div>
     </div>
     <div
-      v-if="error"
+      v-show="error"
       class="guo-error absolute left-0 top-0 z-50 h-full w-full bg-gray-900/90"
     >
       <div
@@ -581,13 +581,13 @@ onBeforeUnmount(() => {
         </div>
       </div>
       <div
-        v-if="conterols"
+        v-show="conterols"
         class="guo-conrols delay-3000 flex h-0 w-full items-center gap-2 overflow-hidden bg-gray-900/50 px-2 text-gray-50 opacity-0 transition-all duration-300 ease-in-out"
         :class="{ 'h-8 overflow-visible opacity-100': MouseInVideo }"
       >
         <!-- group-hover/control:h-8 group-hover/control:overflow-visible group-hover/control:opacity-100 -->
         <div
-          v-if="videoList.length > 0"
+          v-show="videoList.length > 0"
           class="guo-skip-back"
           @pointerdown="back()"
         >
@@ -595,15 +595,15 @@ onBeforeUnmount(() => {
         </div>
         <div class="guo-play" @pointerdown="playOrPause">
           <Icon
-            v-if="paused"
+            v-show="paused"
             size="20"
             name="ri:play-fill"
             style="color: #f3f4f6"
           />
-          <Icon v-else size="20" name="ri:pause-fill" style="color: #f3f4f6" />
+          <Icon v-show="!paused" size="20" name="ri:pause-fill" style="color: #f3f4f6" />
         </div>
         <div
-          v-if="videoList.length > 0"
+          v-show="videoList.length > 0"
           class="guo-skip-forward"
           @pointerdown="forward()"
         >
@@ -712,14 +712,14 @@ onBeforeUnmount(() => {
             @pointerdown="toggleSubtitlesVisible(!isShowSubtitles)"
           >
             <Icon
-              v-if="isShowSubtitles"
+              v-show="isShowSubtitles"
               name="solar:subtitles-bold"
               style="color: #f3f4f6"
               title=""
               size="20"
             />
             <Icon
-              v-else
+              v-show="!isShowSubtitles"
               size="20"
               name="solar:subtitles-linear"
               style="color: #f3f4f6"
@@ -817,13 +817,13 @@ onBeforeUnmount(() => {
           @pointerdown.stop="togglePictureInPicture"
         >
           <Icon
-            v-if="!isPictureInPicture"
+            v-show="!isPictureInPicture"
             size="20"
             name="ri:picture-in-picture-2-fill"
             style="color: #f3f4f6"
           />
           <Icon
-            v-else
+            v-show="isPictureInPicture"
             size="20"
             name="ri:picture-in-picture-exit-fill"
             style="color: #f3f4f6"
@@ -831,13 +831,13 @@ onBeforeUnmount(() => {
         </div>
         <div class="guo-fullscreen" @pointerdown.stop="togglefullScrren">
           <Icon
-            v-if="!isFullscreen"
+            v-show="!isFullscreen"
             size="20"
             name="ri:fullscreen-fill"
             style="color: #f3f4f6"
           />
           <Icon
-            v-else
+            v-show="isFullscreen"
             size="20"
             name="ri:fullscreen-exit-fill"
             style="color: #f3f4f6"
