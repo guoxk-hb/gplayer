@@ -7,8 +7,14 @@ export default defineNuxtConfig({
       viewport: 'width=device-width,initial-scale=1',
       link: [
         { rel: 'icon', href: '/logo.ico', sizes: 'any' },
+        { rel: 'icon', type: 'image/png', href: '/logo.png', sizes: '32x32' },
+        // { rel: 'icon', type: 'image/png', href: '/favicon-16x16.png', sizes: '16x16' },
+        // { rel: 'icon', type: 'image/png', href: '/favicon-32x32.png', sizes: '32x32' },
         { rel: 'icon', type: 'image/svg+xml', href: '/logo.svg' },
         { rel: 'apple-touch-icon', href: '/logo.png' },
+        // { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
+        // { rel: 'android-chrome-192x192', href: '/android-chrome-192x192.png' },
+        // { rel: 'android-chrome-512x512', href: '/android-chrome-512x512.png' },
       ],
       meta: [
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
@@ -19,7 +25,7 @@ export default defineNuxtConfig({
   },
   modules: [
     '@nuxt/eslint',
-    '@nuxt/fonts',
+    // '@nuxt/fonts',
     '@nuxt/icon',
     '@nuxt/image',
     '@vueuse/nuxt',
@@ -30,9 +36,9 @@ export default defineNuxtConfig({
     { src: '~/plugins/flv', mode: 'client' },
     { src: '~/plugins/dash', mode: 'client' },
   ],
-  future: {
-    compatibilityVersion: 4,
-  },
+  // future: {
+  //   compatibilityVersion: 4,
+  // },
   icon: {
     mode: 'css',
     cssLayer: 'base',
