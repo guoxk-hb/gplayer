@@ -1,4 +1,4 @@
-FROM node:22.15.1-alpine AS build-stage
+FROM node:22.17.0 AS build-stage
 
 WORKDIR /app
 RUN corepack enable
@@ -11,7 +11,7 @@ COPY . .
 RUN pnpm build
 
 # SSR
-FROM node:22.15.1-alpine AS production-stage
+FROM node:22.17.0 AS production-stage
 
 WORKDIR /app
 
