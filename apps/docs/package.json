@@ -1,0 +1,17 @@
+{
+  "name": "@demo/docs",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "vitepress dev",
+    "build": "vitepress build",
+    "preview": "vitepress preview"
+  },
+  "devDependencies": {
+    "vitepress": "catalog:",
+    "vue": "catalog:"
+  },
+  "dependencies": {
+    "@guoxk/gplayer": "workspace:*"
+  }
+}

@@ -1,0 +1,29 @@
+# Build outputs
+dist
+.output
+.data
+.nuxt
+.nitro
+.cache
+
+# Node dependencies
+node_modules
+
+# Logs
+logs
+*.log
+
+# Misc
+.DS_Store
+.fleet
+.idea
+.vscode
+
+# Local env files
+.env
+.env.*
+!.env.example
+
+# Demo video/lyric assets (not committed)
+apps/demo/public/video
+apps/demo/public/lyric

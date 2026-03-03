@@ -1,0 +1,34 @@
+{
+  "name": "gplayer-monorepo",
+  "type": "module",
+  "private": true,
+  "packageManager": "pnpm@10.18.3",
+  "scripts": {
+    "dev:demo": "pnpm --filter @demo/demo dev",
+    "dev:docs": "pnpm --filter @demo/docs dev",
+    "build:lib": "pnpm --filter @guoxk/gplayer build",
+    "build:demo": "pnpm --filter @demo/demo build",
+    "build:docs": "pnpm --filter @demo/docs build",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "catalog:",
+    "@commitlint/cli": "catalog:",
+    "@commitlint/config-conventional": "catalog:",
+    "eslint": "catalog:",
+    "eslint-config-prettier": "catalog:",
+    "eslint-plugin-format": "catalog:",
+    "eslint-plugin-prettier": "catalog:",
+    "husky": "catalog:",
+    "lint-staged": "catalog:",
+    "prettier": "catalog:",
+    "typescript": "catalog:"
+  },
+  "lint-staged": {
+    "*.{js,ts,vue,json}": [
+      "eslint --fix"
+    ]
+  }
+}

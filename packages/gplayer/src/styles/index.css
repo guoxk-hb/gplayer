@@ -1,0 +1,601 @@
+/* ==========================================================================
+   @guoxk/gplayer — base styles
+   Import this file once in your app: import '@guoxk/gplayer/style.css'
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   CSS Variables (theme tokens — override to customise)
+   -------------------------------------------------------------------------- */
+:root {
+  --gplayer-primary: #6366f1;
+  --gplayer-primary-light: #818cf8;
+  --gplayer-primary-lighter: #c7d2fe;
+  --gplayer-bg-overlay: rgba(17, 24, 39, 0.5);
+  --gplayer-bg-dark: rgba(17, 24, 39, 0.9);
+  --gplayer-bg-subtitle: rgba(17, 24, 39, 0.6);
+  --gplayer-bg-track: rgba(156, 163, 175, 0.5);
+  --gplayer-bg-menu: rgba(17, 24, 39, 0.5);
+  --gplayer-text: #f3f4f6;
+  --gplayer-text-muted: rgba(243, 244, 246, 0.7);
+  --gplayer-controls-height: 2rem; /* 32px */
+  --gplayer-thumb-size: 0.5rem; /* 8px  */
+  --gplayer-track-height: 0.25rem; /* 4px  */
+  --gplayer-z-overlay: 50;
+  --gplayer-z-controls: 60;
+  --gplayer-z-menu: 70;
+}
+
+/* --------------------------------------------------------------------------
+   Spin animation (replaces Tailwind's animate-spin)
+   -------------------------------------------------------------------------- */
+@keyframes gplayer-spin {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Root container
+   -------------------------------------------------------------------------- */
+.guo-player {
+  position: relative;
+  line-height: 1;
+  background: #000;
+  overflow: hidden;
+  /* Default size — the host element should set width / height */
+  width: 100%;
+  aspect-ratio: 16 / 9;
+}
+
+/* --------------------------------------------------------------------------
+   <video> element
+   -------------------------------------------------------------------------- */
+.guo-video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: #f3f4f6;
+  object-fit: fill;
+}
+
+/* --------------------------------------------------------------------------
+   Overlay layers (poster / loading / error)
+   -------------------------------------------------------------------------- */
+.guo-poster,
+.guo-loading,
+.guo-error {
+  position: absolute;
+  inset: 0;
+  z-index: var(--gplayer-z-overlay);
+  background: var(--gplayer-bg-dark);
+  cursor: pointer;
+}
+
+.guo-poster-icon,
+.guo-loading-icon,
+.guo-error-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  /* base translate; spin animation overrides for loading */
+  transform: translate(-50%, -50%);
+  color: var(--gplayer-text);
+  width: 3rem;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.guo-loading-icon {
+  animation: gplayer-spin 1s linear infinite;
+}
+
+/* --------------------------------------------------------------------------
+   Subtitles
+   -------------------------------------------------------------------------- */
+.guo-subtitles {
+  margin: 0 auto 0.5rem;
+  width: fit-content;
+  text-align: center;
+  color: var(--gplayer-text);
+}
+
+.guo-subtitles-text-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.guo-subtitles-line {
+  height: 2em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.guo-subtitles-text-content-text {
+  display: inline-block;
+  margin: 0.25em 0;
+  padding: 0.25em 0.5em;
+  border-radius: 2px;
+  background: var(--gplayer-bg-subtitle);
+  white-space: pre-wrap;
+}
+
+/* --------------------------------------------------------------------------
+   Controls bar
+   -------------------------------------------------------------------------- */
+.guo-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 0;
+  width: 100%;
+  overflow: hidden;
+  background: var(--gplayer-bg-overlay);
+  padding: 0 0.5rem;
+  color: var(--gplayer-text);
+  opacity: 0;
+  transition:
+    height 0.3s ease-in-out,
+    opacity 0.3s ease-in-out;
+  box-sizing: border-box;
+  position: relative;
+  z-index: var(--gplayer-z-controls);
+}
+
+.guo-controls.is-visible {
+  height: var(--gplayer-controls-height);
+  overflow: visible;
+  opacity: 1;
+}
+
+/* Individual control buttons */
+.guo-controls > * {
+  vertical-align: middle;
+  flex-shrink: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gplayer-text);
+  line-height: 1;
+}
+
+.guo-controls svg {
+  display: block;
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: currentColor;
+}
+
+/* --------------------------------------------------------------------------
+   Time display
+   -------------------------------------------------------------------------- */
+.guo-current-time,
+.guo-time {
+  font-size: 0.75rem;
+  white-space: nowrap;
+  user-select: none;
+  color: var(--gplayer-text);
+}
+
+/* --------------------------------------------------------------------------
+   Progress bar
+   -------------------------------------------------------------------------- */
+.guo-progress {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  margin-right: 0.25rem;
+}
+
+.guo-progress-bar {
+  position: relative;
+  height: var(--gplayer-track-height);
+  width: 100%;
+  cursor: pointer;
+  border-radius: 9999px;
+  background: var(--gplayer-bg-track);
+}
+
+.guo-progress-thumb {
+  position: absolute;
+  top: 50%;
+  z-index: 30;
+  width: var(--gplayer-thumb-size);
+  height: var(--gplayer-thumb-size);
+  transform: translateY(-50%);
+  border-radius: 2px;
+  background: var(--gplayer-primary);
+  cursor: grab;
+}
+
+.guo-progress-thumb:active {
+  cursor: grabbing;
+}
+
+.guo-progress-bar-current {
+  position: relative;
+  z-index: 10;
+  height: 100%;
+  border-radius: 9999px 0 0 9999px;
+  background: var(--gplayer-primary);
+  box-shadow: 0 20px 60px -10px var(--gplayer-primary);
+  pointer-events: none;
+}
+
+.guo-progress-bar-buffer {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  border-radius: 9999px;
+  background: var(--gplayer-primary-lighter);
+  pointer-events: none;
+}
+
+/* click-to-seek transparent overlay sits on top */
+.guo-progress-bar-seek {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  height: 100%;
+  border-radius: 9999px;
+  background: transparent;
+}
+
+/* --------------------------------------------------------------------------
+   Volume control
+   -------------------------------------------------------------------------- */
+.guo-volume {
+  position: relative;
+  display: flex;
+  overflow: hidden;
+  align-items: center;
+}
+
+.guo-volume-icon {
+  flex-shrink: 0;
+  padding-right: 0;
+  transition: padding-right 0.3s ease-in-out;
+}
+
+.guo-volume:hover .guo-volume-icon {
+  padding-right: 0.5rem;
+}
+
+.guo-volume-slider-wrap {
+  width: 0;
+  overflow: hidden;
+  line-height: 10px;
+  transition: width 0.3s ease-in-out;
+  box-shadow: none;
+}
+
+.guo-volume:hover .guo-volume-slider-wrap {
+  width: 6rem;
+}
+
+.guo-volume-bar {
+  width: 100%;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  text-align: center;
+}
+
+.guo-volume-bar:focus {
+  outline: none;
+}
+
+.guo-volume-bar::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(
+    to right,
+    var(--gplayer-primary-lighter),
+    var(--gplayer-primary-light) 30%,
+    var(--gplayer-primary) 100%
+  );
+  border-radius: 1rem;
+}
+
+.guo-volume-bar::-moz-range-track {
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(
+    to right,
+    var(--gplayer-primary-lighter),
+    var(--gplayer-primary-light) 30%,
+    var(--gplayer-primary) 100%
+  );
+  border-radius: 1rem;
+}
+
+.guo-volume-bar::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 8px;
+  height: 8px;
+  margin-top: -2px;
+  background: #fff;
+  border: 1px solid var(--gplayer-primary);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: box-shadow 0.2s;
+  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.1);
+}
+
+.guo-volume-bar::-moz-range-thumb {
+  width: 8px;
+  height: 8px;
+  background: #fff;
+  border: 1px solid var(--gplayer-primary);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: box-shadow 0.2s;
+  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.1);
+}
+
+.guo-volume-bar::-webkit-slider-thumb:hover,
+.guo-volume-bar::-moz-range-thumb:hover {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* --------------------------------------------------------------------------
+   Quality menu
+   -------------------------------------------------------------------------- */
+.guo-quality {
+  position: relative;
+  height: var(--gplayer-controls-height);
+  user-select: none;
+  line-height: var(--gplayer-controls-height);
+  font-size: 0.75rem;
+}
+
+.guo-quality-current {
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.guo-quality-menu {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 4.5rem;
+  background: var(--gplayer-bg-menu);
+  border-radius: 4px 4px 0 0;
+  padding: 0.25rem;
+  line-height: 1;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+  z-index: var(--gplayer-z-menu);
+}
+
+.guo-quality:hover .guo-quality-menu {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.guo-quality-item {
+  width: 100%;
+  cursor: pointer;
+  padding: 0.25rem 0;
+  margin: 0.25rem 0;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--gplayer-text);
+  border-radius: 2px;
+}
+
+.guo-quality-item:hover {
+  background: rgba(243, 244, 246, 0.1);
+}
+
+.guo-quality-item.is-active {
+  color: var(--gplayer-primary);
+}
+
+/* --------------------------------------------------------------------------
+   Subtitle menu
+   -------------------------------------------------------------------------- */
+.guo-subtitles-btn {
+  position: relative;
+  height: var(--gplayer-controls-height);
+  user-select: none;
+  line-height: var(--gplayer-controls-height);
+}
+
+.guo-subtitles-menu {
+  position: absolute;
+  right: -1rem;
+  bottom: 100%;
+  background: var(--gplayer-bg-menu);
+  border-radius: 4px 4px 0 0;
+  padding: 0.25rem 1rem;
+  text-align: left;
+  font-size: 0.9em;
+  line-height: 1;
+  display: none;
+  z-index: var(--gplayer-z-menu);
+  min-width: 3.5rem;
+}
+
+.guo-subtitles-btn:hover .guo-subtitles-menu {
+  display: block;
+}
+
+.guo-subtitles-menu-inner {
+  display: flex;
+  justify-content: space-between;
+  margin: 0 0.75rem;
+  height: auto;
+  transition: width 0.5s ease-in-out;
+}
+
+.guo-subtitles-menu-inner.is-double {
+  width: 12rem;
+}
+
+.guo-subtitles-menu-inner.is-single {
+  width: 6rem;
+}
+
+.guo-subtitles-menu-inner.is-minimal {
+  width: 3.5rem;
+}
+
+.guo-subtitles-col {
+  width: auto;
+}
+
+.guo-subtitles-col-label {
+  padding: 0.25rem 0;
+  margin: 0.25rem 0;
+  font-size: 0.75em;
+}
+
+.guo-subtitles-col-label.is-hidden {
+  visibility: hidden;
+}
+
+.guo-subtitles-item {
+  padding: 0.25rem 0;
+  margin: 0.25rem 0;
+  cursor: pointer;
+  color: var(--gplayer-text);
+  white-space: nowrap;
+}
+
+.guo-subtitles-item.is-active {
+  color: var(--gplayer-primary);
+}
+
+/* Double-subtitle toggle row */
+.guo-double-subtitle-row {
+  margin-top: 0.5rem;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--gplayer-text);
+}
+
+/* Toggle switch */
+.guo-toggle {
+  position: relative;
+  display: inline-flex;
+  cursor: pointer;
+  align-items: center;
+}
+
+.guo-toggle input[type='checkbox'] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.guo-toggle-track {
+  display: inline-flex;
+  height: 0.75rem;
+  width: 1.5rem;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 9999px;
+  background: #d1d5db;
+  position: relative;
+  transition: background 0.2s;
+}
+
+.guo-toggle input:checked + .guo-toggle-track {
+  background: #2563eb;
+}
+
+.guo-toggle-thumb {
+  position: absolute;
+  top: 0.0625rem;
+  left: 0.0625rem;
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  transition:
+    transform 0.2s,
+    border-color 0.2s;
+}
+
+.guo-toggle input:checked ~ .guo-toggle-thumb,
+.guo-toggle input:checked + .guo-toggle-track + .guo-toggle-thumb {
+  transform: translateX(0.75rem);
+  border-color: transparent;
+}
+
+/* --------------------------------------------------------------------------
+   Secondary subtitle column slide-in transition
+   -------------------------------------------------------------------------- */
+.guo-slide-enter-active,
+.guo-slide-leave-active {
+  transition:
+    opacity 0.5s ease-in-out,
+    transform 0.5s ease-in-out;
+}
+
+.guo-slide-enter-from,
+.guo-slide-leave-to {
+  opacity: 0;
+  transform: translateX(1rem);
+}
+
+/* --------------------------------------------------------------------------
+   Fullscreen — cross-browser
+   -------------------------------------------------------------------------- */
+.guo-player:-webkit-full-screen {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  background: #000;
+}
+
+.guo-player:-moz-full-screen {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  background: #000;
+}
+
+.guo-player:-ms-fullscreen {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  background: #000;
+}
+
+.guo-player:fullscreen {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  background: #000;
+}
+
+/* --------------------------------------------------------------------------
+   Bottom area wrapper (subtitles + controls)
+   -------------------------------------------------------------------------- */
+.guo-bottom {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+}

@@ -1,0 +1,32 @@
+{
+  "name": "@demo/demo",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@guoxk/gplayer": "workspace:*",
+    "@nuxt/eslint": "catalog:",
+    "@nuxt/icon": "catalog:",
+    "@nuxt/image": "catalog:",
+    "@nuxtjs/robots": "catalog:",
+    "@nuxtjs/tailwindcss": "catalog:",
+    "@vueuse/nuxt": "catalog:",
+    "dashjs": "catalog:",
+    "flv.js": "catalog:",
+    "franc": "catalog:",
+    "hls.js": "catalog:",
+    "nuxt": "catalog:",
+    "vue": "catalog:",
+    "vue-router": "catalog:"
+  },
+  "devDependencies": {
+    "@iconify-json/ri": "catalog:",
+    "@iconify-json/solar": "catalog:"
+  }
+}
