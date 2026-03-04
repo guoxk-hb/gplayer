@@ -1,0 +1,51 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+
+  // 将项目根目录的 AGENTS.md 作为上下文指令注入
+  "instructions": ["../AGENTS.md"],
+
+  "model": "github-copilot/claude-sonnet-4.6",
+
+  "small_model": "github-copilot/gpt-5-mini",
+
+  "default_agent": "plan",
+
+  "autoupdate": true,
+
+  "share": "manual",
+
+  "provider": {
+    "github-copilot": {
+      "options": {
+        "timeout": false,
+        "setCacheKey": true,
+      },
+    },
+  },
+
+  // 排除构建产物与依赖目录，避免文件监视器产生大量噪音
+  "watcher": {
+    "ignore": [
+      "node_modules/**",
+      "**/dist/**",
+      "**/.nuxt/**",
+      "**/.output/**",
+      ".git/**",
+    ],
+  },
+
+  "compaction": {
+    "auto": false,
+    "prune": false,
+  },
+
+  "formatter": {
+    "eslint": {
+      "command": ["npx", "eslint", "$FILE", "--fix"],
+      "environment": {
+        "NODE_ENV": "development",
+      },
+      "extensions": [".js", ".ts", ".jsx", ".tsx", ".vue", ".mjs", ".cjs"],
+    },
+  },
+}
