@@ -1,45 +1,45 @@
 export interface Lyric {
-  to: number;
-  from: number;
-  content: string;
-  location: number;
+  to: number
+  from: number
+  content: string
+  location: number
 }
 
 export interface Subtitle {
-  fontSize: string | null;
-  fontColor: string | null;
-  backgroundAlpha: string | null;
-  backgroundColor: string | null;
-  Stroke: string;
-  lang: string;
-  body: Lyric[];
-  type: 'subtitle';
-  version: string;
+  fontSize: string | null
+  fontColor: string | null
+  backgroundAlpha: string | null
+  backgroundColor: string | null
+  Stroke: string
+  lang: string
+  body: Lyric[]
+  type: 'subtitle'
+  version: string
 }
 
 export interface VideoSubtitle {
-  lang: string;
-  label: string;
+  lang: string
+  label: string
 }
 
 export interface VideoInfo {
-  name: string;
-  url: string;
-  type: 'mpd' | 'm3u8' | 'mp4' | 'flv';
-  subtitles: VideoSubtitle[];
+  name: string
+  url: string
+  type: 'mpd' | 'm3u8' | 'mp4' | 'flv'
+  subtitles: VideoSubtitle[]
 }
 
 export interface Quality {
-  label: string;
+  label: string
   // representation is kept as unknown to avoid forcing dashjs/hls.js type deps
-  representation?: unknown;
+  representation?: unknown
 }
 
 export interface VideoOptions {
-  autoplay: boolean;
-  muted: boolean;
-  loop: boolean;
-  preload: string;
+  autoplay: boolean
+  muted: boolean
+  loop: boolean
+  preload: string
 }
 
 /**
@@ -55,4 +55,4 @@ export interface VideoOptions {
  *   return await $fetch(`/api/lyric?lang=${lang}&name=${name}`)
  * }
  */
-export type SubtitleLoader = (lang: string, name: string) => Promise<Subtitle>;
+export type SubtitleLoader = (lang: string, name: string) => Promise<Subtitle>

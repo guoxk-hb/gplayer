@@ -1,6 +1,7 @@
 <script setup lang="ts">
-defineProps<{ size?: string | number; color?: string }>();
+defineProps<{ size?: string | number, color?: string }>()
 </script>
+
 <template>
   <!-- Subtitles OFF — outline style (solar:subtitles-linear) -->
   <svg

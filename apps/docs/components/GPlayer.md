@@ -17,7 +17,7 @@
 ## SubtitleLoader
 
 ```ts
-type SubtitleLoader = (lang: string, name: string) => Promise<Subtitle>;
+type SubtitleLoader = (lang: string, name: string) => Promise<Subtitle>
 ```
 
 - `lang`：ISO 639-3 语言代码（如 `'cmn'`、`'kor'`、`'eng'`）
@@ -30,10 +30,10 @@ type SubtitleLoader = (lang: string, name: string) => Promise<Subtitle>;
 
 ```ts
 interface VideoInfo {
-  name: string; // 视频唯一名称标识
-  url: string; // 视频 URL
-  type: 'mpd' | 'm3u8' | 'mp4' | 'flv'; // 视频格式
-  subtitles: VideoSubtitle[]; // 可用字幕列表
+  name: string // 视频唯一名称标识
+  url: string // 视频 URL
+  type: 'mpd' | 'm3u8' | 'mp4' | 'flv' // 视频格式
+  subtitles: VideoSubtitle[] // 可用字幕列表
 }
 ```
 
@@ -41,8 +41,8 @@ interface VideoInfo {
 
 ```ts
 interface VideoSubtitle {
-  lang: string; // ISO 639-3 语言代码
-  label: string; // 用户可见的语言标签（如 '中文'、'English'）
+  lang: string // ISO 639-3 语言代码
+  label: string // 用户可见的语言标签（如 '中文'、'English'）
 }
 ```
 
@@ -50,16 +50,16 @@ interface VideoSubtitle {
 
 ```ts
 interface Subtitle {
-  lang: string; // ISO 639-3 语言代码
-  body: Lyric[]; // 字幕条目数组
-  type: 'subtitle';
-  version: string;
+  lang: string // ISO 639-3 语言代码
+  body: Lyric[] // 字幕条目数组
+  type: 'subtitle'
+  version: string
   // 样式字段（可为 null，使用 CSS 变量控制）
-  fontSize: string | null;
-  fontColor: string | null;
-  backgroundAlpha: string | null;
-  backgroundColor: string | null;
-  Stroke: string;
+  fontSize: string | null
+  fontColor: string | null
+  backgroundAlpha: string | null
+  backgroundColor: string | null
+  Stroke: string
 }
 ```
 
@@ -67,10 +67,10 @@ interface Subtitle {
 
 ```ts
 interface Lyric {
-  from: number; // 开始时间（秒）
-  to: number; // 结束时间（秒）
-  content: string; // 字幕内容
-  location: number; // 位置（2 = 底部）
+  from: number // 开始时间（秒）
+  to: number // 结束时间（秒）
+  content: string // 字幕内容
+  location: number // 位置（2 = 底部）
 }
 ```
 
@@ -81,9 +81,9 @@ interface Lyric {
 将 SRT 字幕文本转换为 `Subtitle` 对象：
 
 ```ts
-import { parseSRT } from '@guoxk/gplayer';
+import { parseSRT } from '@guoxk/gplayer'
 
-const subtitle = parseSRT(srtText, 'cmn');
+const subtitle = parseSRT(srtText, 'cmn')
 ```
 
 ### parseLRC
@@ -91,9 +91,9 @@ const subtitle = parseSRT(srtText, 'cmn');
 将 LRC 歌词文本转换为 `Subtitle` 对象：
 
 ```ts
-import { parseLRC } from '@guoxk/gplayer';
+import { parseLRC } from '@guoxk/gplayer'
 
-const subtitle = parseLRC(lrcText, 'cmn');
+const subtitle = parseLRC(lrcText, 'cmn')
 ```
 
 ### useCurrentLyric
@@ -101,9 +101,9 @@ const subtitle = parseLRC(lrcText, 'cmn');
 根据当前播放时间获取当前字幕内容（composable）：
 
 ```ts
-import { useCurrentLyric } from '@guoxk/gplayer';
+import { useCurrentLyric } from '@guoxk/gplayer'
 
-const text = useCurrentLyric(subtitle.body, currentTimeMs);
+const text = useCurrentLyric(subtitle.body, currentTimeMs)
 ```
 
 ## CSS 变量

@@ -41,7 +41,7 @@ npm install @guoxk/gplayer hls.js
 
 ```ts
 // main.ts
-import '@guoxk/gplayer/style.css';
+import '@guoxk/gplayer/style.css'
 ```
 
 或在单个组件中引入：

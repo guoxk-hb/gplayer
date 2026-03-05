@@ -28,10 +28,10 @@ npm install flv.js      # for FLV
 
 ```ts
 // main.ts
-import GPlayerPlugin from '@guoxk/gplayer';
-import '@guoxk/gplayer/style.css';
+import GPlayerPlugin from '@guoxk/gplayer'
+import '@guoxk/gplayer/style.css'
 
-app.use(GPlayerPlugin);
+app.use(GPlayerPlugin)
 ```
 
 ```vue

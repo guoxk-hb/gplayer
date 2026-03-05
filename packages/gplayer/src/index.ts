@@ -1,10 +1,10 @@
-import type { App } from 'vue';
-import GPlayer from './components/GPlayer.vue';
+import type { App } from 'vue'
+import GPlayer from './components/GPlayer.vue'
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
-export { GPlayer };
+export { GPlayer }
 
 // ---------------------------------------------------------------------------
 // Vue plugin — supports both:
@@ -13,26 +13,21 @@ export { GPlayer };
 // ---------------------------------------------------------------------------
 export const GPlayerPlugin = {
   install(app: App) {
-    app.component('GPlayer', GPlayer);
+    app.component('GPlayer', GPlayer)
   },
-};
+}
 
-export default GPlayerPlugin;
-
-// ---------------------------------------------------------------------------
-// Core player class (advanced usage — direct control)
-// ---------------------------------------------------------------------------
-export { GuoPlayer } from './composables/usePlayer';
+export default GPlayerPlugin
 
 // ---------------------------------------------------------------------------
 // Composables
 // ---------------------------------------------------------------------------
-export { useCurrentLyric } from './composables/useCurrentLyric';
+export { useCurrentLyric } from './composables/useCurrentLyric'
 
 // ---------------------------------------------------------------------------
-// Utilities
+// Core player class (advanced usage — direct control)
 // ---------------------------------------------------------------------------
-export { convertSRTorLRCtoCustomJSON, parseLRC, parseSRT } from './utils/lyric';
+export { GuoPlayer } from './composables/usePlayer'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -45,4 +40,9 @@ export type {
   VideoInfo,
   VideoOptions,
   VideoSubtitle,
-} from './types';
+} from './types'
+
+// ---------------------------------------------------------------------------
+// Utilities
+// ---------------------------------------------------------------------------
+export { convertSRTorLRCtoCustomJSON, parseLRC, parseSRT } from './utils/lyric'

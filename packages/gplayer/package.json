@@ -1,7 +1,7 @@
 {
   "name": "@guoxk/gplayer",
-  "version": "0.1.0",
   "type": "module",
+  "version": "0.1.0",
   "description": "A Vue 3 video player component supporting MPD/DASH, M3U8/HLS, FLV and MP4 formats",
   "author": "guoxk",
   "license": "MIT",
@@ -47,20 +47,20 @@
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
-    "vue": ">=3.3.0",
     "@vueuse/core": ">=10.0.0",
-    "hls.js": ">=1.0.0",
     "dashjs": ">=4.0.0",
-    "flv.js": ">=1.6.0"
+    "flv.js": ">=1.6.0",
+    "hls.js": ">=1.0.0",
+    "vue": ">=3.3.0"
   },
   "peerDependenciesMeta": {
-    "hls.js": {
-      "optional": true
-    },
     "dashjs": {
       "optional": true
     },
     "flv.js": {
+      "optional": true
+    },
+    "hls.js": {
       "optional": true
     }
   },
@@ -71,8 +71,8 @@
     "hls.js": "catalog:",
     "tsdown": "catalog:",
     "typescript": "catalog:",
-    "unplugin-vue": "^5.2.1",
+    "unplugin-vue": "catalog:",
     "vue": "catalog:",
-    "vue-tsc": "^2.2.10"
+    "vue-tsc": "catalog:"
   }
 }

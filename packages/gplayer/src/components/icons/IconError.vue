@@ -1,6 +1,7 @@
 <script setup lang="ts">
-defineProps<{ size?: string | number; color?: string }>();
+defineProps<{ size?: string | number, color?: string }>()
 </script>
+
 <template>
   <svg
     :width="size ?? 48"

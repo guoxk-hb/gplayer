@@ -1,4 +1,4 @@
-import type { Lyric } from '../types';
+import type { Lyric } from '../types'
 
 /**
  * Find the subtitle line that matches the current playback time.
@@ -10,8 +10,8 @@ import type { Lyric } from '../types';
 export function useCurrentLyric(lyric: Lyric[], currentTime: number): string {
   for (const item of lyric) {
     if (item.from <= currentTime / 1000 && item.to >= currentTime / 1000) {
-      return item.content;
+      return item.content
     }
   }
-  return '';
+  return ''
 }

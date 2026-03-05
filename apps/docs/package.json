@@ -7,11 +7,11 @@
     "build": "vitepress build",
     "preview": "vitepress preview"
   },
+  "dependencies": {
+    "@guoxk/gplayer": "workspace:*"
+  },
   "devDependencies": {
     "vitepress": "catalog:",
     "vue": "catalog:"
-  },
-  "dependencies": {
-    "@guoxk/gplayer": "workspace:*"
   }
 }

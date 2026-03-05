@@ -1,6 +1,7 @@
 <script setup lang="ts">
-defineProps<{ size?: string | number; color?: string }>();
+defineProps<{ size?: string | number, color?: string }>()
 </script>
+
 <template>
   <!-- Subtitles ON — bold style (solar:subtitles-bold) -->
   <svg

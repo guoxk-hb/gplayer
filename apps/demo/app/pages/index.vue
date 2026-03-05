@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import type { Subtitle, SubtitleLoader, VideoInfo } from '@guoxk/gplayer';
-import { GPlayer } from '@guoxk/gplayer';
-import '@guoxk/gplayer/style.css';
+import type { Subtitle, SubtitleLoader, VideoInfo } from '@guoxk/gplayer'
+import { GPlayer } from '@guoxk/gplayer'
+import '@guoxk/gplayer/style.css'
 
 // -----------------------------------------------------------------------
 // Load video list from server
 // -----------------------------------------------------------------------
-const { data } = await useFetch<VideoInfo[]>('/api/video');
-const videoList = computed(() => data.value ?? []);
+const { data } = await useFetch<VideoInfo[]>('/api/video')
+const videoList = computed(() => data.value ?? [])
 
 // -----------------------------------------------------------------------
 // SubtitleLoader — fetch subtitle JSON from the demo server API
@@ -16,29 +16,30 @@ const subtitleLoader: SubtitleLoader = async (
   lang: string,
   name: string,
 ): Promise<Subtitle> => {
-  return $fetch<Subtitle>('/api/lyric', { query: { lang, name } });
-};
+  return $fetch<Subtitle>('/api/lyric', { query: { lang, name } })
+}
 
 // -----------------------------------------------------------------------
 // Lyric file upload (SRT / LRC → JSON converter demo)
 // -----------------------------------------------------------------------
-const inputRef = useTemplateRef<HTMLInputElement>('inputRef');
+const inputRef = useTemplateRef<HTMLInputElement>('inputRef')
 
 // ISO 639-3 language code for the uploaded file
-const uploadLang = ref('cmn');
+const uploadLang = ref('cmn')
 
 async function uploadLyric() {
-  if (!inputRef.value?.files?.length) return;
-  const file = inputRef.value.files[0]!;
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('lang', uploadLang.value);
+  if (!inputRef.value?.files?.length)
+    return
+  const file = inputRef.value.files[0]!
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('lang', uploadLang.value)
 
-  const data = await $fetch('/api/lyric', { method: 'POST', body: formData });
+  const data = await $fetch('/api/lyric', { method: 'POST', body: formData })
 
   if ('error' in (data as object)) {
-    console.error((data as { error: string }).error);
-    return;
+    console.error((data as { error: string }).error)
+    return
   }
 
   // Download the converted JSON
@@ -46,18 +47,18 @@ async function uploadLyric() {
     (data as { message: unknown }).message,
     null,
     2,
-  );
-  const blob = new Blob([jsonString], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
+  )
+  const blob = new Blob([jsonString], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
   const a = Object.assign(document.createElement('a'), {
     href: url,
     download: `${file.name.split('.')[0]}.json`,
     style: 'display:none',
-  });
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  })
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
 }
 </script>
 
@@ -74,7 +75,9 @@ async function uploadLyric() {
 
     <!-- Lyric converter section -->
     <div class="mt-12 rounded-lg border border-gray-200 p-6">
-      <h2 class="mb-4 text-lg font-semibold text-gray-700">字幕文件转换工具</h2>
+      <h2 class="mb-4 text-lg font-semibold text-gray-700">
+        字幕文件转换工具
+      </h2>
       <p class="mb-4 text-sm text-gray-500">
         上传 SRT 或 LRC 字幕文件，转换为 gplayer 所需的 JSON 格式。
         需要指定语言代码（ISO 639-3），用于区分不同语言字幕。
@@ -89,7 +92,7 @@ async function uploadLyric() {
             type="text"
             placeholder="cmn / kor / eng"
             class="w-32 rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-violet-400 focus:outline-none"
-          />
+          >
         </div>
 
         <!-- File upload button -->
@@ -108,7 +111,7 @@ async function uploadLyric() {
             accept=".srt,.lrc"
             class="hidden"
             @change="uploadLyric"
-          />
+          >
         </div>
       </div>
 

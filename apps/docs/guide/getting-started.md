@@ -5,23 +5,23 @@
 在 `main.ts` 中使用 Vue 插件方式注册，之后在任意组件中直接使用 `<GPlayer>`：
 
 ```ts
+import GPlayerPlugin from '@guoxk/gplayer'
 // main.ts
-import { createApp } from 'vue';
-import GPlayerPlugin from '@guoxk/gplayer';
-import '@guoxk/gplayer/style.css';
-import App from './App.vue';
+import { createApp } from 'vue'
+import App from './App.vue'
+import '@guoxk/gplayer/style.css'
 
-const app = createApp(App);
-app.use(GPlayerPlugin);
-app.mount('#app');
+const app = createApp(App)
+app.use(GPlayerPlugin)
+app.mount('#app')
 ```
 
 ## 按需引入
 
 ```vue
 <script setup lang="ts">
-import { GPlayer } from '@guoxk/gplayer';
-import '@guoxk/gplayer/style.css';
+import { GPlayer } from '@guoxk/gplayer'
+import '@guoxk/gplayer/style.css'
 </script>
 ```
 
@@ -29,9 +29,9 @@ import '@guoxk/gplayer/style.css';
 
 ```vue
 <script setup lang="ts">
-import type { VideoInfo } from '@guoxk/gplayer';
-import { GPlayer } from '@guoxk/gplayer';
-import '@guoxk/gplayer/style.css';
+import type { VideoInfo } from '@guoxk/gplayer'
+import { GPlayer } from '@guoxk/gplayer'
+import '@guoxk/gplayer/style.css'
 
 const videoList: VideoInfo[] = [
   {
@@ -40,7 +40,7 @@ const videoList: VideoInfo[] = [
     type: 'mp4',
     subtitles: [],
   },
-];
+]
 </script>
 
 <template>
@@ -52,7 +52,7 @@ const videoList: VideoInfo[] = [
 
 ```vue
 <script setup lang="ts">
-import type { VideoInfo } from '@guoxk/gplayer';
+import type { VideoInfo } from '@guoxk/gplayer'
 
 const videoList: VideoInfo[] = [
   {
@@ -61,7 +61,7 @@ const videoList: VideoInfo[] = [
     type: 'm3u8',
     subtitles: [],
   },
-];
+]
 </script>
 ```
 
@@ -73,8 +73,8 @@ const videoList: VideoInfo[] = [
 
 ```vue
 <script setup lang="ts">
-import type { Subtitle, SubtitleLoader, VideoInfo } from '@guoxk/gplayer';
-import { GPlayer } from '@guoxk/gplayer';
+import type { Subtitle, SubtitleLoader, VideoInfo } from '@guoxk/gplayer'
+import { GPlayer } from '@guoxk/gplayer'
 
 const videoList: VideoInfo[] = [
   {
@@ -86,16 +86,16 @@ const videoList: VideoInfo[] = [
       { lang: 'eng', label: 'English' },
     ],
   },
-];
+]
 
 // 实现 SubtitleLoader — 从你的 API 获取字幕数据
 const subtitleLoader: SubtitleLoader = async (
   lang,
   name,
 ): Promise<Subtitle> => {
-  const res = await fetch(`/api/subtitle?lang=${lang}&name=${name}`);
-  return res.json();
-};
+  const res = await fetch(`/api/subtitle?lang=${lang}&name=${name}`)
+  return res.json()
+}
 </script>
 
 <template>

@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitepress';
+import { defineConfig } from 'vitepress'
 
 export default defineConfig({
   title: 'GPlayer',
@@ -44,4 +44,4 @@ export default defineConfig({
   },
 
   head: [['link', { rel: 'icon', href: '/logo.svg' }]],
-});
+})

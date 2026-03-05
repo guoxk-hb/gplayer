@@ -1,4 +1,4 @@
-import type { VideoInfo } from '@guoxk/gplayer';
+import type { VideoInfo } from '@guoxk/gplayer'
 
 const videoList: VideoInfo[] = [
   {
@@ -76,16 +76,17 @@ const videoList: VideoInfo[] = [
       },
     ],
   },
-];
+]
 
-export default defineEventHandler((event) => {
+export default defineEventHandler((_event) => {
   try {
-    return videoList;
-  } catch (error) {
-    console.error('Error reading JSON file:', error);
+    return videoList
+  }
+  catch (error) {
+    console.error('Error reading JSON file:', error)
     throw createError({
       statusCode: 500,
       message: 'Failed to read JSON file',
-    });
+    })
   }
-});
+})
