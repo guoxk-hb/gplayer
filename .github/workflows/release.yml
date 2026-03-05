@@ -5,11 +5,6 @@ on:
     tags:
       - 'v*.*.*'
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
 jobs:
   publish-npm:
     name: Publish to npm
@@ -35,41 +30,3 @@ jobs:
         run: pnpm publish --filter @guoxk/gplayer --no-git-checks --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-  deploy-docs:
-    name: Deploy Docs to GitHub Pages
-    runs-on: ubuntu-latest
-    needs: publish-npm
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Build library first (docs may import from it)
-        run: pnpm build:lib
-
-      - name: Build docs
-        run: pnpm build:docs
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-
-      - name: Upload docs artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: apps/docs/.vitepress/dist
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4

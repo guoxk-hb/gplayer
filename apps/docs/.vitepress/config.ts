@@ -5,6 +5,7 @@ export default defineConfig({
   description:
     'A Vue 3 video player component supporting DASH, HLS, FLV and MP4',
   lang: 'zh-CN',
+  base: '/gplayer/',
 
   themeConfig: {
     logo: '/logo.svg',
@@ -13,7 +14,7 @@ export default defineConfig({
     nav: [
       { text: '指南', link: '/guide/' },
       { text: '组件', link: '/components/GPlayer' },
-      { text: 'GitHub', link: 'https://github.com/guoxk/gplayer' },
+      { text: 'GitHub', link: 'https://github.com/guoxk-me/gplayer' },
     ],
 
     sidebar: {
@@ -35,7 +36,9 @@ export default defineConfig({
       ],
     },
 
-    socialLinks: [{ icon: 'github', link: 'https://github.com/guoxk/gplayer' }],
+    socialLinks: [
+      { icon: 'github', link: 'https://github.com/guoxk-me/gplayer' },
+    ],
 
     footer: {
       message: 'Released under the MIT License.',
