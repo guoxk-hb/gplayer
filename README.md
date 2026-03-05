@@ -54,7 +54,7 @@ gplayer/
 
 ## Documentation
 
-→ [https://guoxk.github.io/gplayer](https://guoxk.github.io/gplayer)
+→ [https://guoxk-me.github.io/gplayer](https://guoxk-me.github.io/gplayer)
 
 ## License
 
