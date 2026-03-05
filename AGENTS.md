@@ -10,7 +10,7 @@
 
 ## Monorepo 结构
 
-```
+```text
 gplayer/
 ├── packages/
 │   └── gplayer/          # 核心组件库 (@guoxk/gplayer)

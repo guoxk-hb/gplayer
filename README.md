@@ -42,7 +42,7 @@ app.use(GPlayerPlugin)
 
 ## Repository Structure
 
-```
+```text
 gplayer/
 ├── packages/
 │   └── gplayer/          # @guoxk/gplayer — npm library

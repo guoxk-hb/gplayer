@@ -2,7 +2,7 @@
   "name": "gplayer-monorepo",
   "type": "module",
   "private": true,
-  "packageManager": "pnpm@10.18.3",
+  "packageManager": "pnpm@10.30.3",
   "scripts": {
     "dev:demo": "pnpm --filter @demo/demo dev",
     "dev:docs": "pnpm --filter @demo/docs dev",

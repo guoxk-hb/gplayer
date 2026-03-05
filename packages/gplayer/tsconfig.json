@@ -5,9 +5,10 @@
     "paths": {
       "@/*": ["./src/*"]
     },
+    "types": ["node"],
     "declaration": true,
     "declarationDir": "./dist"
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "src/**/*.vue"],
   "exclude": ["node_modules", "dist"]
 }

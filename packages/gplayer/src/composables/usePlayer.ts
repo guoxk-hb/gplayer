@@ -177,10 +177,11 @@ export class GuoPlayer {
 
           const list: Quality[] = []
           levels.forEach((item, index) => {
-            const label = QUALITY[item.height as keyof typeof QUALITY]
+            const label
+              = QUALITY[item.height as unknown as keyof typeof QUALITY]
             if (label) {
               const obj: Quality = {
-                label: label as string,
+                label: String(label),
                 representation: item,
               }
               list.push(obj)
@@ -256,9 +257,9 @@ export class GuoPlayer {
 
       const list: Quality[] = []
       for (const item of reps) {
-        const label = QUALITY[item.height as keyof typeof QUALITY]
+        const label = QUALITY[item.height as unknown as keyof typeof QUALITY]
         if (label) {
-          const obj: Quality = { label: label as string, representation: item }
+          const obj: Quality = { label: String(label), representation: item }
           list.push(obj)
           if (item.id === current?.id) {
             this.state.currentQuality = obj
