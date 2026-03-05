@@ -27,3 +27,5 @@ logs
 # Demo video/lyric assets (not committed)
 apps/demo/public/video
 apps/demo/public/lyric
+
+cache
