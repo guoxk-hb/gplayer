@@ -40,4 +40,13 @@ export default defineNuxtConfig({
     mode: 'css',
     cssLayer: 'base',
   },
+  tailwindcss: {
+    config: {
+      content: [
+        './app/**/*.{vue,js,ts}',
+        './server/**/*.{js,ts}',
+        '../../packages/gplayer/src/**/*.{vue,js,ts}',
+      ],
+    },
+  },
 })

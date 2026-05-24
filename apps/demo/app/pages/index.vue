@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { Subtitle, SubtitleLoader, VideoInfo } from '@guoxk/gplayer'
-import { GPlayer } from '@guoxk/gplayer'
-import '@guoxk/gplayer/style.css'
+import { GVideo } from '@guoxk/gplayer'
 
 // -----------------------------------------------------------------------
 // Load video list from server
@@ -65,8 +64,9 @@ async function uploadLyric() {
 <template>
   <div class="mx-auto mt-4 w-[800px]">
     <ClientOnly>
-      <GPlayer
+      <GVideo
         :video-list="videoList"
+        :conterols="true"
         :autoplay="false"
         :muted="false"
         :subtitle-loader="subtitleLoader"
