@@ -11,7 +11,7 @@ A Vue 3 video player component supporting DASH/MPD, HLS/M3U8, FLV and MP4.
 - Draggable progress bar
 - Volume control
 - Playlist support
-- Pure CSS with CSS variables — no Tailwind required
+- Experiment-compatible Tailwind/Nuxt Icon UI
 - TypeScript ready
 
 ## Install
@@ -28,15 +28,14 @@ npm install flv.js      # for FLV
 
 ```ts
 // main.ts
-import GPlayerPlugin from '@guoxk/gplayer'
-import '@guoxk/gplayer/style.css'
+import GVideoPlugin from '@guoxk/gplayer'
 
-app.use(GPlayerPlugin)
+app.use(GVideoPlugin)
 ```
 
 ```vue
 <template>
-  <GPlayer :video-list="videoList" :subtitle-loader="subtitleLoader" />
+  <GVideo :video-list="videoList" :subtitle-loader="subtitleLoader" />
 </template>
 ```
 

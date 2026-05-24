@@ -10,7 +10,7 @@
     "build:demo": "pnpm --filter @demo/demo build",
     "build:docs": "pnpm --filter @demo/docs build",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "pnpm --filter @guoxk/gplayer typecheck && pnpm --filter @demo/demo typecheck",
     "prepare": "husky"
   },
   "devDependencies": {
