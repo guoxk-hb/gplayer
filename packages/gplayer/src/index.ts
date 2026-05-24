@@ -1,23 +1,29 @@
-import type { App } from 'vue'
-import GPlayer from './components/GPlayer.vue'
+import type { App, Component } from 'vue'
+import GVideo from './components/GVideo.vue'
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
-export { GPlayer }
+const GPlayer: Component = GVideo
+
+export { GPlayer, GVideo }
 
 // ---------------------------------------------------------------------------
-// Vue plugin — supports both:
-//   app.use(GPlayerPlugin)          → registers <GPlayer> globally
-//   app.component('GPlayer', GPlayer) → manual registration
+// Vue plugin — experiment-compatible primary API:
+//   app.use(GVideoPlugin)          → registers <GVideo> globally
+//   app.component('GVideo', GVideo) → manual registration
+// <GPlayer> is also registered as a compatibility alias.
 // ---------------------------------------------------------------------------
-export const GPlayerPlugin = {
+export const GVideoPlugin = {
   install(app: App) {
+    app.component('GVideo', GVideo)
     app.component('GPlayer', GPlayer)
   },
 }
 
-export default GPlayerPlugin
+export const GPlayerPlugin = GVideoPlugin
+
+export default GVideoPlugin
 
 // ---------------------------------------------------------------------------
 // Composables

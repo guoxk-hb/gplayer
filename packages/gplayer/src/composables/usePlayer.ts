@@ -44,6 +44,7 @@ interface PlayerState {
 // ---------------------------------------------------------------------------
 export class GuoPlayer {
   private video: HTMLVideoElement
+  private _hasEverPlayed = false
   state = reactive<PlayerState>({
     paused: true,
     canplay: false,
@@ -104,19 +105,14 @@ export class GuoPlayer {
     const v = this.video
 
     v.addEventListener('canplay', () => {
-      if (!this.state.options.autoplay) {
+      if (!this._hasEverPlayed) {
         this.state.loaded = true
-        this.state.paused = true
-      }
-      else {
-        this.state.paused = false
       }
       this.state.canplay = true
     })
 
     v.addEventListener('waiting', () => {
       this.state.canplay = false
-      this.state.paused = true
     })
 
     v.addEventListener('timeupdate', () => {
@@ -126,7 +122,18 @@ export class GuoPlayer {
         : 0
     })
 
+    v.addEventListener('play', () => {
+      this._hasEverPlayed = true
+      this.state.loaded = false
+      this.state.paused = false
+    })
+
+    v.addEventListener('pause', () => {
+      this.state.paused = true
+    })
+
     v.addEventListener('playing', () => {
+      this.state.canplay = true
       this.state.paused = false
     })
 
@@ -316,6 +323,7 @@ export class GuoPlayer {
   // Source switching (e.g. playlist next/prev)
   // -------------------------------------------------------------------------
   src(newSrc: string, type: string) {
+    this._hasEverPlayed = false
     this.state.canplay = false
     this.state.qualityList = []
     this.state.currentQuality = null
@@ -377,6 +385,7 @@ export class GuoPlayer {
   // Playback controls
   // -------------------------------------------------------------------------
   play() {
+    this._hasEverPlayed = true
     this.state.loaded = false
     const promise = this.video.play()
     if (promise) {
@@ -444,15 +453,15 @@ export class GuoPlayer {
           ? -1
           : player.levels.findIndex(l => l.height === rep?.height)
 
-      this.video.pause()
-      this.state.canplay = false
       player.currentLevel = targetIndex
       const currentTime = this.video.currentTime
 
-      player.once(HlsLib.Events.LEVEL_SWITCHED, async () => {
+      player.once(HlsLib.Events.LEVEL_SWITCHED, () => {
         this.video.currentTime = currentTime
-        await this.video.play()
         this.state.canplay = true
+        if (!this.state.paused) {
+          this.state.paused = false
+        }
       })
     }
 
