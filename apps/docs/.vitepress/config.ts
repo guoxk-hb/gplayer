@@ -31,7 +31,7 @@ export default defineConfig({
       '/components/': [
         {
           text: '组件',
-          items: [{ text: 'GPlayer', link: '/components/GPlayer' }],
+          items: [{ text: 'GVideo', link: '/components/GPlayer' }],
         },
       ],
     },

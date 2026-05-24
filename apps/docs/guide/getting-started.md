@@ -2,17 +2,16 @@
 
 ## 全局注册（推荐）
 
-在 `main.ts` 中使用 Vue 插件方式注册，之后在任意组件中直接使用 `<GPlayer>`：
+在 `main.ts` 中使用 Vue 插件方式注册，之后在任意组件中直接使用 `<GVideo>`：
 
 ```ts
-import GPlayerPlugin from '@guoxk/gplayer'
+import GVideoPlugin from '@guoxk/gplayer'
 // main.ts
 import { createApp } from 'vue'
 import App from './App.vue'
-import '@guoxk/gplayer/style.css'
 
 const app = createApp(App)
-app.use(GPlayerPlugin)
+app.use(GVideoPlugin)
 app.mount('#app')
 ```
 
@@ -20,8 +19,7 @@ app.mount('#app')
 
 ```vue
 <script setup lang="ts">
-import { GPlayer } from '@guoxk/gplayer'
-import '@guoxk/gplayer/style.css'
+import { GVideo } from '@guoxk/gplayer'
 </script>
 ```
 
@@ -30,8 +28,7 @@ import '@guoxk/gplayer/style.css'
 ```vue
 <script setup lang="ts">
 import type { VideoInfo } from '@guoxk/gplayer'
-import { GPlayer } from '@guoxk/gplayer'
-import '@guoxk/gplayer/style.css'
+import { GVideo } from '@guoxk/gplayer'
 
 const videoList: VideoInfo[] = [
   {
@@ -44,7 +41,7 @@ const videoList: VideoInfo[] = [
 </script>
 
 <template>
-  <GPlayer :video-list="videoList" />
+  <GVideo :video-list="videoList" />
 </template>
 ```
 
@@ -74,7 +71,7 @@ const videoList: VideoInfo[] = [
 ```vue
 <script setup lang="ts">
 import type { Subtitle, SubtitleLoader, VideoInfo } from '@guoxk/gplayer'
-import { GPlayer } from '@guoxk/gplayer'
+import { GVideo } from '@guoxk/gplayer'
 
 const videoList: VideoInfo[] = [
   {
@@ -99,7 +96,7 @@ const subtitleLoader: SubtitleLoader = async (
 </script>
 
 <template>
-  <GPlayer :video-list="videoList" :subtitle-loader="subtitleLoader" />
+  <GVideo :video-list="videoList" :subtitle-loader="subtitleLoader" />
 </template>
 ```
 

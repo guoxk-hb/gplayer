@@ -1,12 +1,15 @@
-# GPlayer 组件
+# GVideo 组件
+
+`GVideo` 是从 experiment 分支迁移后的主组件名；`GPlayer` 仍作为兼容别名导出。
 
 ## Props
 
 | Prop              | 类型             | 默认值   | 说明                                        |
 | ----------------- | ---------------- | -------- | ------------------------------------------- |
 | `videoList`       | `VideoInfo[]`    | `[]`     | 视频列表，多个视频时显示上一集 / 下一集按钮 |
-| `controls`        | `boolean`        | `true`   | 是否显示控制栏                              |
-| `muted`           | `boolean`        | `false`  | 初始是否静音                                |
+| `conterols`       | `boolean`        | `true`   | 是否显示控制栏（保留 experiment 旧拼写）    |
+| `controls`        | `boolean`        | —        | `conterols` 的兼容别名，传入时优先生效      |
+| `muted`           | `boolean`        | `true`   | 初始是否静音                                |
 | `autoplay`        | `boolean`        | `false`  | 是否自动播放                                |
 | `loop`            | `boolean`        | `false`  | 是否循环播放                                |
 | `preload`         | `string`         | `'auto'` | 原生 `<video>` 的 preload 属性值            |
@@ -106,15 +109,7 @@ import { useCurrentLyric } from '@guoxk/gplayer'
 const text = useCurrentLyric(subtitle.body, currentTimeMs)
 ```
 
-## CSS 变量
+## 样式
 
-| 变量                        | 默认值               | 说明                     |
-| --------------------------- | -------------------- | ------------------------ |
-| `--gplayer-primary`         | `#6366f1`            | 主色（进度条、选中状态） |
-| `--gplayer-primary-light`   | `#818cf8`            | 主色浅色                 |
-| `--gplayer-primary-lighter` | `#c7d2fe`            | 主色更浅色（缓冲进度）   |
-| `--gplayer-bg-overlay`      | `rgba(17,24,39,0.5)` | 控制栏背景               |
-| `--gplayer-bg-dark`         | `rgba(17,24,39,0.9)` | 遮罩层背景               |
-| `--gplayer-bg-subtitle`     | `rgba(17,24,39,0.6)` | 字幕背景                 |
-| `--gplayer-text`            | `#f3f4f6`            | 控制栏文字颜色           |
-| `--gplayer-controls-height` | `2rem`               | 控制栏高度               |
+当前阶段 `GVideo` 保持 experiment 版本的 Tailwind / Nuxt Icon 控件实现。
+不要为 `GVideo` 引入 `@guoxk/gplayer/style.css`；该文件属于后续组件库纯 CSS 路线，会与 experiment 版控件类名冲突。

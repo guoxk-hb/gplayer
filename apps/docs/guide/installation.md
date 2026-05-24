@@ -35,19 +35,9 @@ GPlayer 将 hls.js / dashjs / flv.js 设为**可选 peer dependency**，只需�
 npm install @guoxk/gplayer hls.js
 ```
 
-## 引入样式
+## 样式说明
 
-在你的应用入口文件中引入 GPlayer 的 CSS：
+当前阶段 `GVideo` 按 experiment 版本运行，控件样式来自组件内的 Tailwind class 和 Nuxt Icon。
+不要同时引入 `@guoxk/gplayer/style.css`，否则会和 experiment 版 `.guo-*` 类名产生样式冲突。
 
-```ts
-// main.ts
-import '@guoxk/gplayer/style.css'
-```
-
-或在单个组件中引入：
-
-```vue
-<style>
-@import '@guoxk/gplayer/style.css';
-</style>
-```
+在 Nuxt demo 这类 monorepo 场景中，需要确保 Tailwind 扫描 `packages/gplayer/src/**/*.{vue,js,ts}`。
