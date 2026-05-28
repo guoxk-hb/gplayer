@@ -1,10 +1,11 @@
 import type { App, Component } from 'vue'
-import GVideo from './components/GVideo.vue'
+import GPlayerComponent from './components/GPlayer.vue'
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
-const GPlayer: Component = GVideo
+const GPlayer: Component = GPlayerComponent
+const GVideo: Component = GPlayerComponent
 
 export { GPlayer, GVideo }
 

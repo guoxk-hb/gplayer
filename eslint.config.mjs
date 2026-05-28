@@ -13,6 +13,8 @@ export default antfu({
     '**/.nuxt/**',
     '**/.output/**',
     '**/node_modules/**',
+    '.opencode/**',
+    'AGENTS.md',
     '**/*.jsonc',
     'pnpm-workspace.yaml',
   ],
