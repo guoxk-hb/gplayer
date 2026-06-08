@@ -5,10 +5,11 @@
 在 `main.ts` 中使用 Vue 插件方式注册，之后在任意组件中直接使用 `<GVideo>`：
 
 ```ts
-import GVideoPlugin from '@guoxk/gplayer'
 // main.ts
+import GVideoPlugin from '@guoxk/gplayer'
 import { createApp } from 'vue'
 import App from './App.vue'
+import '@guoxk/gplayer/style.css'
 
 const app = createApp(App)
 app.use(GVideoPlugin)

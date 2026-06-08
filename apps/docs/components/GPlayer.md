@@ -111,5 +111,10 @@ const text = useCurrentLyric(subtitle.body, currentTimeMs)
 
 ## 样式
 
-当前阶段 `GVideo` 保持 experiment 版本的 Tailwind / Nuxt Icon 控件实现。
-不要为 `GVideo` 引入 `@guoxk/gplayer/style.css`；该文件属于后续组件库纯 CSS 路线，会与 experiment 版控件类名冲突。
+应用入口引入一次播放器样式：
+
+```ts
+import '@guoxk/gplayer/style.css'
+```
+
+`GVideo` 本体只包含播放器 UI，不包含 demo 调试面板、说明文案、Tailwind class 或 Nuxt Icon 依赖。

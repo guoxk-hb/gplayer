@@ -7,6 +7,18 @@ import { GVideo } from '@guoxk/gplayer'
 // -----------------------------------------------------------------------
 const { data } = await useFetch<VideoInfo[]>('/api/video')
 const videoList = computed(() => data.value ?? [])
+const firstVideo = computed(() => videoList.value[0])
+
+const demoStatus = computed(() => [
+  ['视频数量', String(videoList.value.length)],
+  ['控制栏显示', 'true'],
+  ['是否静音', 'false'],
+  ['预加载模式', 'auto'],
+  ['自动播放', 'false'],
+  ['字幕加载器', 'enabled'],
+  ['首个视频', firstVideo.value?.name ?? '-'],
+  ['首个格式', firstVideo.value?.type ?? '-'],
+])
 
 // -----------------------------------------------------------------------
 // SubtitleLoader — fetch subtitle JSON from the demo server API
@@ -63,10 +75,36 @@ async function uploadLyric() {
 
 <template>
   <div class="mx-auto mt-4 w-[800px]">
+    <div class="mb-3 grid grid-cols-4 gap-2 text-[0.8rem]">
+      <div
+        v-for="[label, value] in demoStatus"
+        :key="label"
+        class="rounded border border-gray-200 px-3 py-2"
+      >
+        <span class="border-r border-gray-200 pr-2 text-gray-500">
+          {{ label }}
+        </span>
+        <span class="pl-2 text-gray-800">{{ value }}</span>
+      </div>
+    </div>
+
+    <div class="mb-3 text-center text-[0.75rem] font-semibold text-red-600">
+      <div>
+        {{
+          '注：视频来源与网络，视频目的仅为学习测试用，若侵权联系删除。服务器宽带视频加载速度慢，请谅解。'
+        }}
+      </div>
+      <div>
+        {{
+          "分别为Baek-hyun（边伯贤）- Elevator、Baek-hyun（边伯贤）- Chocolate、EXO-K - Baby Don't Cry、EXO - History、EXO - Love Me Right"
+        }}
+      </div>
+    </div>
+
     <ClientOnly>
       <GVideo
         :video-list="videoList"
-        :conterols="true"
+        :controls="true"
         :autoplay="false"
         :muted="false"
         :subtitle-loader="subtitleLoader"

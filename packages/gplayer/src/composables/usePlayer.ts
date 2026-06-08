@@ -181,6 +181,7 @@ export class GuoPlayer {
         hls.once(HlsLib.Events.LEVEL_SWITCHED, async (_, currentData) => {
           const currentLevel = currentData.level
           const levels = data.levels
+          this.state.representation = levels
 
           const list: Quality[] = []
           levels.forEach((item, index) => {

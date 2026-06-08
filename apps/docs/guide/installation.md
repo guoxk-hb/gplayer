@@ -37,7 +37,10 @@ npm install @guoxk/gplayer hls.js
 
 ## 样式说明
 
-当前阶段 `GVideo` 按 experiment 版本运行，控件样式来自组件内的 Tailwind class 和 Nuxt Icon。
-不要同时引入 `@guoxk/gplayer/style.css`，否则会和 experiment 版 `.guo-*` 类名产生样式冲突。
+播放器控件样式由包内 CSS 提供。应用入口需要引入一次：
 
-在 Nuxt demo 这类 monorepo 场景中，需要确保 Tailwind 扫描 `packages/gplayer/src/**/*.{vue,js,ts}`。
+```ts
+import '@guoxk/gplayer/style.css'
+```
+
+`GVideo` 不依赖 Tailwind 或 Nuxt Icon；demo 页面里的测试面板和说明文案属于 demo 自己的界面。
